@@ -30,7 +30,7 @@ public:
 //////////////////////////////////////////////////////
 	
 	bool	startServ();
-
+	void	add_client();
 
 	// template <typename T, typename A>
 	// void	read_exec(T user, int addrlen, A)

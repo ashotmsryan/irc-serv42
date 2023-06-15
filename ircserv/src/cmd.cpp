@@ -62,8 +62,10 @@ void	serv::pass(string b, User &user)
 	stringstream ss(b);
 	string p;
 	ss >> p;
-	ss >> p;
 
+	cout << p << endl;
+	cout << password << endl;
+	sleep(10);
 	if (p == password)
 	{
 		send(user.getUserFD(), "PASS :You are registered\n", 26, 0);

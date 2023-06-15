@@ -15,14 +15,16 @@ class Data : public err_msg
 	bool	checkPort(string &port);
 public:
 	Data();
-	int		serv_fd;
 	int		port;
 	string	password;
 
-	fd_set	readFD;
-	struct sockaddr_in addr;
-	err_msg msg_err;
+	int		serv_fd;
 	int		max_sd;
+	fd_set	def;
+
+	struct sockaddr_in addr;
+	int addrlen;
+	err_msg msg_err;
 	//////////////--setter--/////////////////
 	void	setPassword(string pass);
 	bool	setPort(string port);
