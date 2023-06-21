@@ -5,8 +5,8 @@ serv::serv()
 	cmd["USER"] = &serv::user;
 	cmd["PASS"] = &serv::pass;
 	// cmd["PICK"] = &serv::pick;
-	// cmd["PING"] = &serv::ping;
-	// cmd["PONG"] = &serv::pong;
+	cmd["PING"] = &serv::ping;
+	cmd["PONG"] = &serv::pong;
 	// cmd["QUIT"] = &serv::quit;
 	// cmd["ERROR"] = &serv::error;
 	// cmd["AUTHENTICATE"] = &serv::authenticate;
@@ -35,16 +35,59 @@ void	serv::add_client()
 		perror("accept");
 		return ;
 	}
+	//add client soccet in the set
 	FD_SET(new_user.getUserFD(), &def);
+	//add client(user) to the map of users
 	users.insert(pair<int, User> (new_user.getUserFD(), new_user));
 	std::cout << "New client added" << std::endl;	
 }
+
+
+bool	serv::read_write(int fd, fd_set &def, fd_set &readFD)
+{
+	string e;
+	string str;
+	char buf[1000] = {0};
+
+	if (recv(fd, buf, 1000, 0) < 0)
+    {
+		getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
+		cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
+	    FD_CLR(fd, &def);
+		users.erase(fd);
+		close(fd);
+        return true;
+    }
+	stringstream ss(buf);
+	ss >> e;
+	map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
+	cout << "client [" << fd << "] = "  << e << std::endl;
+	if(it == cmd.end())
+	{
+		msg_err.ERR_UNKNOWNCOMMAND(fd, e);
+	}
+	else
+	{
+		if (users.find(fd)->second.getPassFlag() || (!users.find(fd)->second.getPassFlag() && it->first == "PASS"))
+		{
+			str = buf;
+			str = str.substr(e.size(), str.size() - e.size());
+			(this->*(it->second))(str, users.find(fd)->second);
+		}
+		else
+			msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
+	}
+	for (int i = 0; i < 1000; i++)
+		buf[i] = 0;
+	return (false);
+}
+
 
 bool	serv::startServ()
 {
 	int opt = 1;
 	serv_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (serv_fd == 0)
+	if (serv_fd < 0)
 	{
 		perror("faild socket!");
 		return true;
@@ -71,11 +114,11 @@ bool	serv::startServ()
 		perror("listen");
 		return true;
 	}
-		// fcntl(getServerFD(),F_SETFL,O_NONBLOCK);
 	addrlen = sizeof(addr);
 	int select_flag;
 	fd_set	readFD;
 	fd_set	writeFD;
+
 	//clear the socket set
 	FD_ZERO(&def);
 	//add server socket to set 
@@ -84,17 +127,10 @@ bool	serv::startServ()
 	timeval t;
 	t.tv_usec = 300000;
 	t.tv_sec = 0;
-	// if (fcntl(serv_fd, F_SETFL, O_NONBLOCK) < 0)
-	// 	perror("fcntl");
 	cout << "ServerFD = "<< serv_fd << endl;
-	string str;
-	string e;
-	char buf[1000] = {0};
 	while (true)
 	{
 		writeFD = readFD = def;
-		// max_sd = std::max(serv_fd, maxFD());
-		cout << "maxFD = " << maxFD() <<endl;
  		//wait for an activity on one of the sockets , timeout is NULL
         //so wait indefinitely 
 		select_flag = select(maxFD() + 1, &readFD, &writeFD, NULL, NULL);
@@ -103,6 +139,7 @@ bool	serv::startServ()
 			std::cout << "select :Something went wrong" << std::endl;
 			continue;
 		}
+		// cout << "maxFD = " << maxFD() << endl;
 		for (int fd = 0; fd <= maxFD(); fd++)
         {
             if (FD_ISSET(fd, &readFD))
@@ -113,38 +150,40 @@ bool	serv::startServ()
                     break;
                 }
                 else
-                {
-            		if (read(fd, buf, 1000) < 0)
-            		{
-						getpeername(fd, (struct sockaddr*)(&readFD), (socklen_t*)&addrlen);  
-						perror("read:");
-						cout << "Host disconnected , ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
-	        		    FD_CLR(fd, &def);
-						close(fd);
-						users.erase(fd);
-            		    break;
-            		}
-		        	if (fd != serv_fd)
-                	{
-						stringstream ss(buf);
-						ss >> e;
-						map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
-							cout << e << std::endl;
-						if(it == cmd.end())
-						{
-							msg_err.ERR_UNKNOWNCOMMAND(fd, e);
-						}
-						else
-						{
-							if (users.find(fd)->second.getPassFlag() || (!users.find(fd)->second.getPassFlag() && it->first == "PASS"))
-								(this->*(it->second))(str, users.find(fd)->second);
-							else
-								msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
-						}
-                	}
-                }
+					if (read_write(fd, def, readFD))
+						break ;
             }
         }
 	}
 	return (false);
 }
+            		// if (recv(fd, buf, 1000, 0) < 0)
+            		// {
+					// 	getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
+					// 	cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
+	        		//     FD_CLR(fd, &def);
+					// 	users.erase(fd);
+					// 	close(fd);
+            		//     break;
+            		// }
+					// stringstream ss(buf);
+					// ss >> e;
+					// map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
+					// cout << "client [" << fd << "] = "  << e << std::endl;
+					// if(it == cmd.end())
+					// {
+					// 	msg_err.ERR_UNKNOWNCOMMAND(fd, e);
+					// }
+					// else
+					// {
+					// 	if (users.find(fd)->second.getPassFlag() || (!users.find(fd)->second.getPassFlag() && it->first == "PASS"))
+					// 	{
+					// 		str = buf;
+					// 		str = str.substr(e.size(), str.size() - e.size());
+					// 		(this->*(it->second))(str, users.find(fd)->second);
+					// 	}
+					// 	else
+					// 		msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
+					// }
+					// for (int i = 0; i < 1000; i++)
+					// 	buf[i] = 0;

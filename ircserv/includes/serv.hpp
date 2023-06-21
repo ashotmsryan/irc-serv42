@@ -15,14 +15,15 @@ class serv : public Data
 	bool	checkSockFD();
 	int		maxFD();
 	bool	checkCommand(char *buf);
+	bool	read_write(int fd, fd_set &def, fd_set &readFD);
 public:
 	serv();
 ////////////////////---COMMANDS---//////////////////////
 	void	user(string b, User &new_user);
 	void	pass(string b, User &new_user);
 	// void	pick(string b, User &new_user);
-	// void	ping(string b, User &new_user);
-	// void	pong(string b, User &new_user);
+	void	ping(string b, User &new_user);
+	void	pong(string b, User &new_user);
 	// void	quit(string b, User &new_user);
 	// void	error(string b, User &new_user);
 	// void	authenticate(string b, User &new_user);
@@ -31,6 +32,7 @@ public:
 	
 	bool	startServ();
 	void	add_client();
+
 
 	// template <typename T, typename A>
 	// void	read_exec(T user, int addrlen, A)

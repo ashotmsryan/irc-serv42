@@ -63,19 +63,52 @@ void	serv::pass(string b, User &user)
 	string p;
 	ss >> p;
 
-	cout << p << endl;
-	cout << password << endl;
-	sleep(10);
+	cout << "client's input = ["<< p << "]"<< endl;
+	cout << "the server password = ["<< password << "]"<< endl;
 	if (p == password)
 	{
 		send(user.getUserFD(), "PASS :You are registered\n", 26, 0);
 		cout << "New client registered" << endl;
 		user.changePassFlag();
-		
 	}
 	else
 		send(user.getUserFD(), "PASS :Wrong password\n", 22, 0);
 	ss.clear();
+}
+
+
+void	serv::ping(string b, User &use)
+{
+	if (use.getPassFlag())
+	{
+		stringstream ss(b);
+		string token;
+		string token2;
+		ss >> token;
+		ss >> token2;
+		if (token == "")
+		{
+			// ERR_NOORIGIN()
+			cout << "need more parameters" << endl;
+			return;
+		}
+		if (token2 != "")
+		{
+
+		}
+		else
+		{
+			
+			cout << "PING :" << token << endl;
+			string a = "PONG :" + token + "\n";
+			send(use.getUserFD(), a.c_str(), 8 + b.size(), 0);
+		}
+	}
+}
+
+void	serv::pong(string b, User &user)
+{
+	if (serv_fd == user.getUserFD())
 }
 
 
@@ -89,22 +122,12 @@ void	serv::pass(string b, User &user)
 
 
 
-
-// void	serv::pick(string b, User &new_user)
+// void	serv::pick(string b, User &user)
 // {
+
 // 	cout << "pick" << b<< std::endl;
 // }
 
-
-// void	serv::ping(string b, User &new_user)
-// {
-// 	cout << "ping" <<b << std::endl;
-// }
-
-// void	serv::pong(string b, User &new_user)
-// {
-// 	cout << "pong" <<b<< std::endl;
-// }
 
 // void	serv::quit(string b, User &new_user)
 // {
