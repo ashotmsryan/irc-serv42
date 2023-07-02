@@ -10,6 +10,8 @@
 using	namespace std;
 class err_msg;
 
+#define MaxLenght 20
+
 class Data : public err_msg
 {
 	bool	checkPort(string &port);

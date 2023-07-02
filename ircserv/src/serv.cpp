@@ -4,13 +4,26 @@ serv::serv()
 {
 	cmd["USER"] = &serv::user;
 	cmd["PASS"] = &serv::pass;
-	// cmd["PICK"] = &serv::pick;
+	cmd["NICK"] = &serv::nick;
 	cmd["PING"] = &serv::ping;
 	cmd["PONG"] = &serv::pong;
-	// cmd["QUIT"] = &serv::quit;
+	cmd["QUIT"] = &serv::quit;
+	cmd["PRIVMSG"] = &serv::privmsg;
 	// cmd["ERROR"] = &serv::error;
 	// cmd["AUTHENTICATE"] = &serv::authenticate;
-	// cmd["CAP"] = &serv::cap;
+	cmd["CAP"] = &serv::cap;
+	cmd["LS"] = &serv::ls;
+}
+
+int	serv::findUserByNick (string nick)
+{
+	map<int, User>::iterator e = users.end();
+	for (map<int, User>::iterator i = users.begin(); i != e; i++)
+	{
+		if (i->second.getNickName() == nick)
+			return (i->first);
+	}
+	return (0);
 }
 
 int	serv::maxFD()
@@ -43,7 +56,7 @@ void	serv::add_client()
 }
 
 
-bool	serv::read_write(int fd, fd_set &def, fd_set &readFD)
+bool	serv::read_write(int fd)
 {
 	string e;
 	string str;
@@ -72,16 +85,17 @@ bool	serv::read_write(int fd, fd_set &def, fd_set &readFD)
 		{
 			str = buf;
 			str = str.substr(e.size(), str.size() - e.size());
-			(this->*(it->second))(str, users.find(fd)->second);
+			if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
+				&& ((it->first == "USER") || (it->first == "NICK") || (it->first == "PASS"))))
+				(this->*(it->second))(str, users.find(fd)->second);
+			else
+				msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
 		}
 		else
 			msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
 	}
-	for (int i = 0; i < 1000; i++)
-		buf[i] = 0;
 	return (false);
 }
-
 
 bool	serv::startServ()
 {
@@ -150,40 +164,10 @@ bool	serv::startServ()
                     break;
                 }
                 else
-					if (read_write(fd, def, readFD))
+					if (read_write(fd))
 						break ;
             }
         }
 	}
 	return (false);
 }
-            		// if (recv(fd, buf, 1000, 0) < 0)
-            		// {
-					// 	getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
-					// 	cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
-	        		//     FD_CLR(fd, &def);
-					// 	users.erase(fd);
-					// 	close(fd);
-            		//     break;
-            		// }
-					// stringstream ss(buf);
-					// ss >> e;
-					// map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
-					// cout << "client [" << fd << "] = "  << e << std::endl;
-					// if(it == cmd.end())
-					// {
-					// 	msg_err.ERR_UNKNOWNCOMMAND(fd, e);
-					// }
-					// else
-					// {
-					// 	if (users.find(fd)->second.getPassFlag() || (!users.find(fd)->second.getPassFlag() && it->first == "PASS"))
-					// 	{
-					// 		str = buf;
-					// 		str = str.substr(e.size(), str.size() - e.size());
-					// 		(this->*(it->second))(str, users.find(fd)->second);
-					// 	}
-					// 	else
-					// 		msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
-					// }
-					// for (int i = 0; i < 1000; i++)
-					// 	buf[i] = 0;

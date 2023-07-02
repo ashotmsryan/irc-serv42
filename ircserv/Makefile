@@ -6,18 +6,22 @@ SRCS = $(wildcard src/*.cpp)
 
 OBJFILE = objs
 
-OBJS = $(patsubst %.cpp, %.o, $(SRCS))
+OBJS = $(patsubst src/%.cpp, $(OBJFILE)/%.o, $(SRCS))
 
 RM = rm -rf
 
 MD = mkdir -p
 
-all: $(NAME)
+all: $(OBJFILE) $(NAME)
 
-$(NAME): $(OBJS)
-	@$(MD) $(OBJFILE)
-	@mv $(OBJS) $(OBJFILE)
-	$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJFILE)/*.o
+$(OBJFILE) :
+	$(MD) $(OBJFILE)
+
+$(OBJFILE)/%.o : src/%.cpp Makefile includes/*.hpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(NAME): $(OBJS) Makefile
+	$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJS)
 
 clean:
 	$(RM) $(OBJFILE)

@@ -15,19 +15,22 @@ class serv : public Data
 	bool	checkSockFD();
 	int		maxFD();
 	bool	checkCommand(char *buf);
-	bool	read_write(int fd, fd_set &def, fd_set &readFD);
+	bool	read_write(int fd);
+	int		findUserByNick(string nick);
 public:
 	serv();
 ////////////////////---COMMANDS---//////////////////////
-	void	user(string b, User &new_user);
-	void	pass(string b, User &new_user);
-	// void	pick(string b, User &new_user);
-	void	ping(string b, User &new_user);
-	void	pong(string b, User &new_user);
-	// void	quit(string b, User &new_user);
+	void	user(string b, User &user);
+	void	pass(string b, User &user);
+	void	nick(string b, User &user);
+	void	ping(string b, User &user);
+	void	pong(string b, User &user);
+	void	quit(string b, User &user);
+	void	privmsg(string b, User &user);
 	// void	error(string b, User &new_user);
 	// void	authenticate(string b, User &new_user);
-	// void	cap(string b, User &new_user);
+	void	ls(string b, User &user);
+	void	cap(string b, User &user);
 //////////////////////////////////////////////////////
 	
 	bool	startServ();
