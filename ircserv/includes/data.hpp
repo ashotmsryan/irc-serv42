@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include "err_msg.hpp"
+#include <sstream>
 using	namespace std;
 class err_msg;
 
@@ -31,5 +32,5 @@ public:
 	void	setPassword(string pass);
 	bool	setPort(string port);
 	////////////////////////////////////////////////
-
+	vector<std::string> &split(std::string &str);
 };

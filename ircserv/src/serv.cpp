@@ -5,14 +5,20 @@ serv::serv()
 	cmd["USER"] = &serv::user;
 	cmd["PASS"] = &serv::pass;
 	cmd["NICK"] = &serv::nick;
-	cmd["PING"] = &serv::ping;
-	cmd["PONG"] = &serv::pong;
+	cmd["PING"] = &serv::ping;//chem imanum
+	cmd["PONG"] = &serv::pong;//chem imanum
 	cmd["QUIT"] = &serv::quit;
-	cmd["PRIVMSG"] = &serv::privmsg;
-	// cmd["ERROR"] = &serv::error;
-	// cmd["AUTHENTICATE"] = &serv::authenticate;
+	cmd["PRIVMSG"] = &serv::privmsg;//kisat
 	cmd["CAP"] = &serv::cap;
 	cmd["LS"] = &serv::ls;
+	// cmd["ERROR"] = &serv::error;
+	// cmd["AUTHENTICATE"] = &serv::authenticate;
+	
+	cmd["JOIN"] = &serv::join;
+	cmd["KICK"] = &serv::kick;
+	cmd["INVITE"] = &serv::invite;
+	cmd["TOPIC"] = &serv::topic;
+	// cmd["MODE"] = &serv::mode;
 }
 
 int	serv::findUserByNick (string nick)

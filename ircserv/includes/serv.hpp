@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include "data.hpp"
 #include <map>
-#include <sstream>
 #include "user.hpp"
 
 class serv : public Data
@@ -17,6 +16,11 @@ class serv : public Data
 	bool	checkCommand(char *buf);
 	bool	read_write(int fd);
 	int		findUserByNick(string nick);
+	void	joinChannel(User &user, Channel &chan, std::vector<string> arr, bool flag);
+	bool	checkChannelNameKey(std::vector<std::string> arr, bool flag);
+	bool	joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
+	bool	joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
+	void	sendAll(std::map<int, User> use, std::string cmd, std::string msg);
 public:
 	serv();
 ////////////////////---COMMANDS---//////////////////////
@@ -28,48 +32,18 @@ public:
 	void	quit(string b, User &user);
 	void	privmsg(string b, User &user);
 	// void	error(string b, User &new_user);
-	// void	authenticate(string b, User &new_user);
+	
 	void	ls(string b, User &user);
 	void	cap(string b, User &user);
+	void	join(string b, User &user);
+	void	kick(string b, User &user);
+	void	invite(string b, User &user);
+	void	topic(string b, User &user);
+	// void	mode(string b, User &user);
 //////////////////////////////////////////////////////
-	
+///////////////////////HELP///////////////////////////
 	bool	startServ();
 	void	add_client();
 
-
-	// template <typename T, typename A>
-	// void	read_exec(T user, int addrlen, A)
-	// {
-	// 	char buf[1000] = {0};
-	// 	string e;
-	// 	for (A i = user.begin(); i != user.end(); i++)
-	// 	{
-	// 		if(read(i->second.getUserFD(), buf, 1000) < 0)
-	// 		{
-	// 			getpeername(i->second.getUserFD(), (struct sockaddr*)(&getSockAddr()), (socklen_t*)&addrlen);  
-	//            	cout << "Host disconnected , ip " << inet_ntoa(getSockAddr().sin_addr) << ", port " << getPort() << endl;
-	// 			close(i->second.getUserFD());
-	// 			user.erase(i);
-	// 		}
-	// 		stringstream ss(buf);
-	// 		ss >> e;
-	// 		map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
-	// 			cout << e << std::endl;
-	// 		if(it == cmd.end())
-	// 		{
-	// 			msg_err.ERR_UNKNOWNCOMMAND(i->second.getUserFD(), e);
-	// 		}
-	// 		else
-	// 		{
-	// 			if (i->second.getPassFlag() || (!i->second.getPassFlag() && it->first == "PASS"))
-	// 				(this->*(it->second))(buf, i->second);
-	// 			else
-	// 				msg_err.ERR_NOTREGISTERED(i->second.getUserFD(), e);
-	// 		}
-	// 		// int j = -1;
-	// 		// while (j != 1000)
-	// 		// 	buf[++j] = 0;
-	// 	}
-	// }
 };
 

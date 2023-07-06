@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include "channel.hpp"
 
 class User
 {
@@ -12,10 +12,9 @@ class User
 	std::string nickName;
 
 	bool 		pass;
-	bool		oper;
-	// map<>
+	map<std::string, Channel> channels;
 public:
-	bool functionality;
+	bool		functionality;
 	User(int f);
 	void	setHostName(std::string &n);
 	void	setNickName(std::string &n);
@@ -23,6 +22,7 @@ public:
 	void	setRealName(std::string &n);
 	void	setServName(std::string &n);
 	void	setUserFD(int f);
+	void	setChannels(std::string n, Channel &chan);
 
 	void	changePassFlag();
 
@@ -33,4 +33,5 @@ public:
 	std::string getNickName();
 	bool 		getPassFlag();
 	int 		&getUserFD();
+	map<std::string, Channel> &getChannels();
 };
