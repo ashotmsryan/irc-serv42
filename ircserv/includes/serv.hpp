@@ -1,14 +1,18 @@
-#pragma once
+#ifndef SERV_HPP
+# define SERV_HPP
 
 #include <fcntl.h>
-#include "data.hpp"
 #include <map>
+#include "data.hpp"
 #include "user.hpp"
+
+class User;
+class Channel;
+
 
 class serv : public Data
 {
 	map<int, User> users;
-	// map<string, User> users;
 	map<string, void(serv::*)(string, User&)> cmd;
 
 	bool	checkSockFD();
@@ -39,7 +43,7 @@ public:
 	void	kick(string b, User &user);
 	void	invite(string b, User &user);
 	void	topic(string b, User &user);
-	// void	mode(string b, User &user);
+	void	mode(string b, User &user);
 //////////////////////////////////////////////////////
 ///////////////////////HELP///////////////////////////
 	bool	startServ();
@@ -47,3 +51,4 @@ public:
 
 };
 
+#endif

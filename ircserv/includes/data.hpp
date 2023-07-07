@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DATA_HPP
+# define DATA_HPP
 
 #include <map>
 #include <vector>
@@ -6,8 +7,9 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include "err_msg.hpp"
 #include <sstream>
+#include "err_msg.hpp"
+
 using	namespace std;
 class err_msg;
 
@@ -32,5 +34,8 @@ public:
 	void	setPassword(string pass);
 	bool	setPort(string port);
 	////////////////////////////////////////////////
-	vector<std::string> &split(std::string &str);
+	vector<std::string> split(std::string &str);
 };
+
+
+#endif

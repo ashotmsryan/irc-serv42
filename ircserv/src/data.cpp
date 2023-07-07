@@ -48,7 +48,7 @@ bool	Data::setPort(string p)
 	return (true);
 }
 
-vector<std::string> &Data::split(std::string &str)
+std::vector<std::string> Data::split(std::string &str)
 {
 	std::stringstream ss(str);
 	vector<std::string> ret;

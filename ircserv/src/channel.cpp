@@ -5,6 +5,10 @@ Channel::Channel(std::string n)
 	name = n;
 	max = 5;
 	i = false;
+	t = false;
+	k = false;
+	o = false;
+	l = false;
 }
 
 std::string Channel::getChannelName(){return (name);}

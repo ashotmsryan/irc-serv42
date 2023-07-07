@@ -18,7 +18,7 @@ serv::serv()
 	cmd["KICK"] = &serv::kick;
 	cmd["INVITE"] = &serv::invite;
 	cmd["TOPIC"] = &serv::topic;
-	// cmd["MODE"] = &serv::mode;
+	cmd["MODE"] = &serv::mode;
 }
 
 int	serv::findUserByNick (string nick)
@@ -92,7 +92,7 @@ bool	serv::read_write(int fd)
 			str = buf;
 			str = str.substr(e.size(), str.size() - e.size());
 			if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
-				&& ((it->first == "USER") || (it->first == "NICK") || (it->first == "PASS"))))
+				&& ((it->first == "CAP") || (it->first == "USER") || (it->first == "NICK") || (it->first == "PASS"))))
 				(this->*(it->second))(str, users.find(fd)->second);
 			else
 				msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);

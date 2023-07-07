@@ -1,6 +1,8 @@
-#pragma once
+#ifndef CHANNEL_HPP
+# define CHANNEL_HPP
 
 #include "serv.hpp"
+class User;
 
 class Channel
 {
@@ -10,10 +12,14 @@ class Channel
 	std::string topic;
 public:
 	bool	i;
-	int		max;
+	bool	t;
+	bool	k;
+	bool	o;
+	bool	l;
+	size_t		max;
 	std::map<std::string, User> bans;
 	std::map<std::string, bool> oper;
-	
+
 	Channel(std::string n);
 	
 	std::string getChannelName();
@@ -28,3 +34,5 @@ public:
 	void	setChannelTopic(std::string t);
 	std::string getChannelTopic();
 };
+
+#endif

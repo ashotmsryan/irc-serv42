@@ -344,7 +344,7 @@ void	serv::invite(std::string b, User &user)
 	if (ii->second.i && ii->second.oper.find(user.getNickName()) == ii->second.oper.end())
 	{
 		// ERR_CHANOPRIVSNEEDED
-		send(user.getUserFD(),  (arr[1] + " :You're not on that channel\n").c_str(), 36 + arr[1].size(), 0); 
+		send(user.getUserFD(),  (arr[1] + " :You're not on that channel's oper\n").c_str(), 43 + arr[1].size(), 0); 
 		return ;
 	}
 	ii->second.setMembers(it->second.getUserFD(), it->second);
@@ -388,12 +388,43 @@ void	serv::topic(std::string b, User &user)
 		if (it->second.oper.find(user.getNickName()) == it->second.oper.end())
 		{
 			// ERR_CHANOPRIVSNEEDED
-			send(user.getUserFD(),  (arr[1] + " :You're not on that channel\n").c_str(), 36 + arr[1].size(), 0); 
+			send(user.getUserFD(),  (arr[1] + " :You're not on that channel's oper\n").c_str(), 43 + arr[1].size(), 0); 
 			return ;
 		}
 		it->second.setChannelTopic(t);
 	}
 
+}
+
+
+void	serv::mode(string b, User &user)
+{
+	std::vector<std::string> arr = split(b);
+	if (arr.empty() || (!arr.empty() && arr[0].empty()) || (!arr[0].empty() && arr[1].empty()))
+	{
+		// ERR_NEEDMOREPARAMS
+		send(user.getUserFD(), "MODE :Need more params\n", 24, 0);
+		return ;
+	}
+	if (arr.size() > 2)
+	{
+		send(user.getUserFD(), "MODE :Too many params\n", 23, 0);
+		return ;
+	}
+	std::map<std::string, Channel>::iterator it = user.getChannels().find(arr[0]);
+	if (it == user.getChannels().end())
+	{
+		// ERR_NOTONCHANNEL
+		send(user.getUserFD(),  (arr[1] + " :You're not on that channel\n").c_str(), 36 + arr[0].size(), 0);
+		return ;
+	}
+	if ((it->second.oper.find(user.getNickName())) == it->second.oper.end())
+	{
+		// ERR_CHANOPRIVSNEEDED
+		send(user.getUserFD(), "MODE :You're not channel operator\n", 35, 0);
+		return ;
+	}
+	
 }
 
 

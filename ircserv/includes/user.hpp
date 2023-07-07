@@ -1,17 +1,20 @@
-#pragma once
+#ifndef USER_HPP
+# define USER_HPP
 
 #include "channel.hpp"
+class Channel;
+
 
 class User
 {
 	int			fd;
+	bool 		pass;
 	std::string hostName;
 	std::string uName;
 	std::string realName;
 	std::string servName;
 	std::string nickName;
 
-	bool 		pass;
 	map<std::string, Channel> channels;
 public:
 	bool		functionality;
@@ -35,3 +38,5 @@ public:
 	int 		&getUserFD();
 	map<std::string, Channel> &getChannels();
 };
+
+#endif
