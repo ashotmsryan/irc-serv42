@@ -54,9 +54,12 @@ std::vector<std::string> Data::split(std::string &str)
 	vector<std::string> ret;
 	std::string s = " ";
 
-	while(!s.empty())
+	if (str.empty())
+		return (ret);
+	while(ss >> s)
 	{
-		ss >> s;
+		if (s.empty())
+			return (ret);
 		ret.push_back(s);
 	}
 	return (ret);

@@ -6,8 +6,6 @@ Channel::Channel(std::string n)
 	max = 5;
 	i = false;
 	t = false;
-	k = false;
-	o = false;
 	l = false;
 }
 

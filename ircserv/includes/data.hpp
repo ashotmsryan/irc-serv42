@@ -3,12 +3,14 @@
 
 #include <map>
 #include <vector>
+#include <array>
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sstream>
 #include "err_msg.hpp"
+
 
 using	namespace std;
 class err_msg;

@@ -13,8 +13,6 @@ class Channel
 public:
 	bool	i;
 	bool	t;
-	bool	k;
-	bool	o;
 	bool	l;
 	size_t		max;
 	std::map<std::string, User> bans;

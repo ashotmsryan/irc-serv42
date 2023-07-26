@@ -4,7 +4,7 @@ void	serv::sendAll(std::map<int, User> use, std::string cmd, std::string msg)
 {
 	for (std::map<int, User>::iterator i = use.begin(); i != use.end(); i++)
 	{
-		send(i->second.getUserFD(), (cmd + " :" + msg).c_str(), cmd.size() + msg.size() + 23, 0);
+		send(i->second.getUserFD(), (cmd + msg).c_str(), cmd.size() + msg.size(), 0);
 	}
 }
 
@@ -17,46 +17,91 @@ bool	serv::checkChannelNameKey(std::vector<std::string> arr, bool flag)
 	return true;
 }
 
+map<std::string, Channel>::iterator serv::findChannelsFromUsers(std::string name)
+{
+	map<int, User>::iterator i = users.begin();
+	map<std::string, Channel>::iterator it;
+	for (; i != users.end(); i++)
+	{
+		it = i->second.getChannels().find(name);
+		if (it->first == name)
+			return it;
+	}
+	i = users.begin();
+	return i->second.getChannels().end();
+}
+
+void	serv::sendReplyToJoin(Channel &chan, User &user)
+{
+	sendAll(chan.getMembers(), ":JOIN@localhost ", user.getNickName() + " joind the " + chan.getChannelName() + " channel\n");
+	std::map<int, User>::iterator i = chan.getMembers().begin();
+	std::string members;
+	for (; i != chan.getMembers().end(); i++)
+	{
+		if (chan.oper.find(i->second.getNickName()) != chan.oper.end())
+		{
+			members.append("@");
+		}
+		else
+			members.append("+");
+		members.append(i->second.getNickName());						
+		members.append(" ");
+	}
+	msg_err.RPL_JOIN(user.getUserFD(), chan.getChannelName());
+	msg_err.RPL_NAMREPLY(user.getUserFD(), chan.getChannelName(), members);
+	if (chan.getChannelTopic().empty())
+		msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), false, "");
+	else
+		msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), true, chan.getChannelTopic());
+}
+
+
 bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag)
 {
 	if (chan.getChannelKey().empty() && flag)
 	{
-		chan.setChannelKey(arr[1]);
-		chan.setChannelName(arr[0]);
+		if (chan.oper.find(user.getNickName()) == chan.oper.end())
+		{
+			chan.setChannelKey(arr[1]);
+			if (arr[0][0] != '#')
+				arr[0] = '#' + arr[0];
+			chan.setChannelName(arr[0]);
+		}
+		else
+		{
+			msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
+			return true;
+		}
 	}
 	else if (chan.getChannelKey() == arr[1])
 	{
 		if (chan.bans.find(user.getNickName()) != chan.bans.end())
 		{
-				// ERR_BANNEDFROMCHAN
-				send(user.getUserFD(), "JOIN : Banned from channel\n", 28, 0);
-				return true;
+			msg_err.ERR_BANNEDFROMCHAN(user.getUserFD(), arr[0]);
+			return true;
 		}
 		else
 		{
-			if (chan.max > chan.getMembers().size())
+			if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 			{
 				if (checkChannelNameKey(arr, true))
-					send(user.getUserFD(), ("JOIN : the " + user.getNickName() + "joind the channel\n").c_str(), user.getNickName().size() + 31, 0);
+					sendReplyToJoin(chan, user);
 				else
 				{
-					//  ERR_NOSUCHCHANNEL
-					send(user.getUserFD(), "JOIN : No such a channel\n", 26, 0);
+					msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
 					return true;
 				}
 			}
 			else
 			{
-				//  ERR_CHANNELISFULL
-				send(user.getUserFD(), "JOIN : Channel is full\n", 24, 0);
+				msg_err.ERR_CHANNELISFULL(user.getUserFD(), arr[0]);
 				return true;
 			}
 		}
 	}
 	else
 	{
-		// ERR_BADCHANNELKEY
-		send(user.getUserFD(), "JOIN : Bad channel key\n", 24, 0);
+		msg_err.ERR_CHANNELISFULL(user.getUserFD(), arr[0]);
 		return true;
 	}
 	return false;
@@ -70,27 +115,24 @@ bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, b
 	}
 	if (chan.bans.find(user.getNickName()) != chan.bans.end())
 	{
-		// ERR_BANNEDFROMCHAN
-		send(user.getUserFD(), "JOIN : Banned from channel\n", 28, 0);
+		msg_err.ERR_BANNEDFROMCHAN(user.getUserFD(), arr[0]);
 		return true;
 	}
 	else
 	{
-		if (chan.max > chan.getMembers().size())
+		if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 		{
 			if (checkChannelNameKey(arr, false))
-				send(user.getUserFD(), ("JOIN : the " + user.getNickName() + "joind the channel\n").c_str(), user.getNickName().size() + 31, 0);
+					sendReplyToJoin(chan, user);
 			else
 			{
-				//  ERR_NOSUCHCHANNEL
-				send(user.getUserFD(), "JOIN : No such a channel\n", 26, 0);
+				msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
 				return true;
 			}
 		}
 		else
 		{
-			//  ERR_CHANNELISFULL
-			send(user.getUserFD(), "JOIN : Channel is full\n", 24, 0);
+			msg_err.ERR_CHANNELISFULL(user.getUserFD(), arr[0]);
 			return true;
 		}
 	}
@@ -107,14 +149,10 @@ void	serv::joinChannel(User &user, Channel &chan, std::vector<string> arr, bool 
 	else if (arr.size() == 1)
 	{
 		if (joinWithOneArgs(user, chan, arr, flag))
+		{
 			return ;
+		}
 	}
-	else
-	{
-		send(user.getUserFD(), "JOIN :Too many parameters\n", 27, 0);
-		return ;
-	}
-	std::map<int, User>::iterator i = users.find(user.getUserFD());
 	chan.setMembers(user.getUserFD(), user);
-	i->second.setChannels(chan.getChannelName(), chan);
+	user.setChannels(chan.getChannelName(), chan);
 }

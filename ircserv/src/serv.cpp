@@ -10,7 +10,6 @@ serv::serv()
 	cmd["QUIT"] = &serv::quit;
 	cmd["PRIVMSG"] = &serv::privmsg;//kisat
 	cmd["CAP"] = &serv::cap;
-	cmd["LS"] = &serv::ls;
 	// cmd["ERROR"] = &serv::error;
 	// cmd["AUTHENTICATE"] = &serv::authenticate;
 	
@@ -93,7 +92,9 @@ bool	serv::read_write(int fd)
 			str = str.substr(e.size(), str.size() - e.size());
 			if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
 				&& ((it->first == "CAP") || (it->first == "USER") || (it->first == "NICK") || (it->first == "PASS"))))
+			{	
 				(this->*(it->second))(str, users.find(fd)->second);
+			}
 			else
 				msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
 		}
