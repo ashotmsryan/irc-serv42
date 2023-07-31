@@ -13,6 +13,7 @@ public:
 	void	ERR_ERRONEUSNICKNAME(int cl_fd, std::string nick);
 	void	ERR_NONICKNAMEGIVEN(int cl_fd, std::string nick);
 	void	ERR_NICKCOLLISION(int cl_fd, std::string nick);
+	void	ERR_NICKNAMEINUSE(int cl_fd, std::string nick);
 	void	ERR_NOORIGIN(int cl_fd, std::string cmd);
 	void	ERR_NOTEXTTOSEND(int cl_fd, std::string cmd);
 	void	ERR_NORECIPIENT(int cl_fd, std::string cmd);

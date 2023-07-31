@@ -10,7 +10,7 @@ void	err_msg::ERR_UNKNOWNCOMMAND(int cl_fd, std::string b)
 
 void	err_msg::ERR_NEEDMOREPARAMS(int cl_fd, std::string cmd)
 {
-	send(cl_fd, (":" + cmd + "@localhost 461 Not enough parameters\n").c_str(), (cmd.size() + 40), 0);
+	send(cl_fd, (":" + cmd + "@localhost 461 Not enough parameters\n").c_str(), (cmd.size() + 39), 0);
 }
 
 void	err_msg::ERR_NOTREGISTERED(int cl_fd, std::string nick)
@@ -20,6 +20,7 @@ void	err_msg::ERR_NOTREGISTERED(int cl_fd, std::string nick)
 
 void	err_msg::ERR_ALREADYREGISTRED(int cl_fd, std::string nick)
 {
+	std::cout << "already registerd\n";
 	send(cl_fd, (":" + nick + "@localhost 462 You may not reregister\n").c_str(), (nick.size() + 41), 0);
 }
 
@@ -38,9 +39,14 @@ void	err_msg::ERR_NICKCOLLISION(int cl_fd, std::string nick)
 	send(cl_fd, (":" + nick + "@localhost 436 Nickname collision KILL\n").c_str(), (nick.size() + 42), 0);
 }
 
+void	err_msg::ERR_NICKNAMEINUSE(int cl_fd, std::string nick)
+{
+	send(cl_fd, (":" + nick + "@localhost 433 Nickname is already in use\n").c_str(), (nick.size() + 42), 0);
+}
+
 void	err_msg::ERR_NOORIGIN(int cl_fd, std::string cmd)
 {
-	send(cl_fd, (":" + cmd + "@localhost 409 No origin specified\n").c_str(), (cmd.size() + 38), 0);
+	send(cl_fd, (":" + cmd + "@localhost 409 No origin specified\n").c_str(), (cmd.size() + 37), 0);
 }
 
 void	err_msg::ERR_NOTEXTTOSEND(int cl_fd, std::string cmd)
@@ -150,5 +156,5 @@ void	err_msg::RPL_JOIN(int cl_fd, std::string cname)
 
 void	err_msg::RPL_REGISTER(int cl_fd, std::string nick)
 {
-	send(cl_fd, (":" + nick + "@localhost 001 Welcome to the IRC Network, " +  +"!\n").c_str(), 49 + (2*nick.size()), 0);
+	send(cl_fd, (":" + nick + "@localhost 001 Welcome to the IRC Network, " + nick +"!\n").c_str(), 49 + (2*nick.size()), 0);
 }

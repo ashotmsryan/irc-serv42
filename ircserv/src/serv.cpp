@@ -73,7 +73,8 @@ bool	serv::read_write(int fd)
 		cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
 	    FD_CLR(fd, &def);
 		users.erase(fd);
-		close(fd);
+		if (fd != -1)
+			close(fd);
         return true;
     }
 	stringstream ss(buf);
@@ -90,8 +91,10 @@ bool	serv::read_write(int fd)
 		{
 			str = buf;
 			str = str.substr(e.size(), str.size() - e.size());
+
 			if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
-				&& ((it->first == "CAP") || (it->first == "USER") || (it->first == "NICK") || (it->first == "PASS"))))
+				&& ((it->first == "CAP") || (it->first == "USER")
+				|| (it->first == "NICK") || (it->first == "PASS") || (it->first == "PING"))))
 			{	
 				(this->*(it->second))(str, users.find(fd)->second);
 			}
@@ -161,7 +164,7 @@ bool	serv::startServ()
 			continue;
 		}
 		// cout << "maxFD = " << maxFD() << endl;
-		for (int fd = 0; fd <= maxFD(); fd++)
+		for (int fd = 2; fd <= maxFD(); fd++)
         {
             if (FD_ISSET(fd, &readFD))
             {

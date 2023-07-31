@@ -5,15 +5,22 @@ void	serv::user(string b, User &user)
 	if (!user.functionality)
 	{
 		size_t k = b.find_first_of(":");
-		if (k == string::npos)
+		std::string rname;
+		std::string s;
+		std::vector<std::string> arr;
+		if (k != string::npos)
 		{
-			msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "USER");
-			return;
+			rname = b.substr(k, b.size());
+			s = b.substr(0, k);
+			arr = split(s);
 		}
-		string s = b.substr(0, k);
-		std::vector<std::string> arr = split(s);
-		b = b.substr(k, b.size());
-		if (arr.size() < 3 || (arr.size() >= 3 && b.empty()))
+		else
+		{
+			s = b;
+			arr = split(s);
+			rname = arr.back();
+		}
+		if (arr.size() < 3 || (arr.size() <= 3 && k == string::npos))
 		{
 			msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "USER");
 			return;
@@ -21,8 +28,8 @@ void	serv::user(string b, User &user)
 		user.setUserName(arr[0]);
 		user.setHostName(arr[1]);
 		user.setServName(arr[2]);
-		user.setRealName(b);
-		if (user.getNickName() != "" && user.getPassFlag())
+		user.setRealName(rname);
+		if (!user.functionality && user.getNickName() != "" && user.getPassFlag())
 		{
 			msg_err.RPL_REGISTER(user.getUserFD(), user.getNickName());
 			user.functionality = true;
@@ -54,7 +61,7 @@ void	serv::pass(string b, User &user)
 			msg_err.ERR_ALREADYREGISTRED(user.getUserFD(), user.getNickName());
 			return ;
 		}
-		if (!user.getNickName().empty() && !user.getHostName().empty())
+		if (!user.functionality && !user.getNickName().empty() && !user.getHostName().empty())
 		{
 			msg_err.RPL_REGISTER(user.getUserFD(), user.getNickName());
 			user.functionality = true;
@@ -66,7 +73,6 @@ void	serv::pass(string b, User &user)
 void	serv::nick(string b, User &user)
 {
 	std::vector<string> arr = split(b);
-
 
 	if (arr.size() > 2 || arr[0].find_first_of(",@!:") != string::npos || arr[0].size() > MaxLenght)
 	{
@@ -90,7 +96,7 @@ void	serv::nick(string b, User &user)
 	{
 		if (findUserByNick(arr[0]) && findUserByNick(arr[0]) != user.getUserFD())
 		{
-			msg_err.ERR_NICKCOLLISION(user.getUserFD(), user.getNickName());
+			msg_err.ERR_NICKNAMEINUSE(user.getUserFD(), user.getNickName());
 			return;
 		}
 		user.setNickName(arr[0]);
@@ -99,15 +105,15 @@ void	serv::nick(string b, User &user)
 	{
 		if (findUserByNick(arr[0]))
 		{
-			msg_err.ERR_NICKCOLLISION(user.getUserFD(), user.getNickName());
+			msg_err.ERR_NICKNAMEINUSE(user.getUserFD(), user.getNickName());
 			return;
 		}
 		user.setNickName(arr[0]);
-		if(!user.getHostName().empty() && user.getPassFlag())
-		{
-			msg_err.RPL_REGISTER(user.getUserFD(), user.getNickName());
-			user.functionality = true;
-		}
+	}
+	if(!user.functionality && !user.getHostName().empty() && user.getPassFlag())
+	{
+		msg_err.RPL_REGISTER(user.getUserFD(), user.getNickName());
+		user.functionality = true;
 	}
 }
 
@@ -152,6 +158,7 @@ void	serv::quit(string b, User &user) // delete from channels
 	FD_CLR(user.getUserFD(), &def);
 	close(user.getUserFD());
 	users.erase(user.getUserFD());
+	cout << "##########################################################################" <<std::endl;
 }
 
 void	serv::privmsg(string b, User &user)
