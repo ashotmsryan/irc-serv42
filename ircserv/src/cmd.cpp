@@ -174,7 +174,7 @@ void	serv::privmsg(string b, User &user)
 	}
 	nick = b.substr(0, sp);
 	msg = b.substr(sp, b.size());
-		msg = msg.substr(msg.find(":") + 1, msg.size());
+	msg = msg.substr(msg.find(":"), msg.size());
 	std::vector<std::string> part = split(nick);
 	if (part.empty())
 	{
@@ -200,7 +200,7 @@ void	serv::privmsg(string b, User &user)
 		}
 		else
 		{
-			send(findUserByNick(part[0]), msg.c_str(), msg.size() ,0);
+			msg_err.RPL_PRIVMSG(findUserByNick(part[0]), user.getNickName(), part[0], msg);
 			return;
 		}
 		msg_err.ERR_CANNOTSENDTOCHAN(user.getUserFD(), part[0]);

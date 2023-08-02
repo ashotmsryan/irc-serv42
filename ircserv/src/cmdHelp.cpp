@@ -33,26 +33,44 @@ map<std::string, Channel>::iterator serv::findChannelsFromUsers(std::string name
 
 void	serv::sendReplyToJoin(Channel &chan, User &user)
 {
-	sendAll(chan.getMembers(), ":JOIN@localhost ", user.getNickName() + " joind the " + chan.getChannelName() + " channel\n");
 	std::map<int, User>::iterator i = chan.getMembers().begin();
 	std::string members;
+	std::string oper;
 	for (; i != chan.getMembers().end(); i++)
 	{
 		if (chan.oper.find(i->second.getNickName()) != chan.oper.end())
 		{
-			members.append("@");
+			oper.append("@");
+			oper.append(i->second.getNickName());
+			oper.append(" ");
 		}
 		else
+		{
 			members.append("+");
-		members.append(i->second.getNickName());						
+			members.append(i->second.getNickName());						
+			members.append(" ");
+		}
+	}
+	if (chan.getMembers().size() == 0)
+	{
+		oper.append("@");
+		oper.append(user.getNickName());
+		oper.append(" ");
+	}
+	else
+	{
+		members.append("+");
+		members.append(user.getNickName());						
 		members.append(" ");
 	}
-	msg_err.RPL_JOIN(user.getUserFD(), chan.getChannelName());
-	msg_err.RPL_NAMREPLY(user.getUserFD(), chan.getChannelName(), members);
-	if (chan.getChannelTopic().empty())
-		msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), false, "");
-	else
-		msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), true, chan.getChannelTopic());
+	sendAll(chan.getMembers(), (":" + user.getNickName() + "@localhost JOIN "),  (chan.getChannelName() + "\n"));
+	// if (chan.getChannelTopic().empty())
+	// 	msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), false, "");
+	// else
+	// 	msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), true, chan.getChannelTopic());
+	msg_err.RPL_NAMREPLY(user.getUserFD(), user.getNickName(), chan.getChannelName(), oper, members);
+	msg_err.RPL_ENDOFNAMES(user.getUserFD(), user.getNickName(), chan.getChannelName());
+
 }
 
 

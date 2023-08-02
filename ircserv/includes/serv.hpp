@@ -24,8 +24,8 @@ class serv : public Data
 	bool	checkChannelNameKey(std::vector<std::string> arr, bool flag);
 	bool	joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	bool	joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
-	void	sendAll(std::map<int, User> use, std::string cmd, std::string msg);
 	void	sendReplyToJoin(Channel &chan, User &user);
+	void	sendAll(std::map<int, User> use, std::string cmd, std::string msg);
 
 	map<std::string, Channel>::iterator findChannelsFromUsers(std::string name);
 public:

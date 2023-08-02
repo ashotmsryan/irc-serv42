@@ -67,7 +67,7 @@ bool	serv::read_write(int fd)
 	string str;
 	char buf[1000] = {0};
 
-	if (recv(fd, buf, 1000, 0) < 0)
+	if (recv(fd, buf, 1000, 0) <= 0)
     {
 		getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
 		cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
@@ -141,23 +141,23 @@ bool	serv::startServ()
 	addrlen = sizeof(addr);
 	int select_flag;
 	fd_set	readFD;
-	fd_set	writeFD;
+	// fd_set	writeFD;
 
 	//clear the socket set
 	FD_ZERO(&def);
 	//add server socket to set 
 	FD_SET(serv_fd, &def);
-	readFD = writeFD = def;
+	readFD = def;
 	timeval t;
 	t.tv_usec = 300000;
 	t.tv_sec = 0;
 	cout << "ServerFD = "<< serv_fd << endl;
 	while (true)
 	{
-		writeFD = readFD = def;
+		readFD = def;
  		//wait for an activity on one of the sockets , timeout is NULL
         //so wait indefinitely 
-		select_flag = select(maxFD() + 1, &readFD, &writeFD, NULL, NULL);
+		select_flag = select(maxFD() + 1, &readFD, NULL, NULL, NULL);
 		if (select_flag < 0 && errno != EINTR)
 		{
 			std::cout << "select :Something went wrong" << std::endl;

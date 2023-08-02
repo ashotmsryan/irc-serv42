@@ -1,6 +1,8 @@
-#include <iostream>
-#include <iostream>
-#include <sys/socket.h>
+#ifndef  ERR_MSG_HPP
+# define ERR_MSG_HPP
+
+# include <iostream>
+# include <sys/socket.h>
 
 class err_msg
 {
@@ -40,9 +42,11 @@ public:
 	void	RPL_INVITE(int cl_fd, std::string cname, std::string nick);
 	void	RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string topic);
 	
-	void	RPL_NAMREPLY(int cl_fd, std::string cname, std::string topic);
-	void	RPL_JOIN(int cl_fd, std::string cname);
+	// void	RPL_JOIN(int cl_fd, std::string nick, std::string cname);
 	void	RPL_REGISTER(int cl_fd, std::string nick);
+	void	RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members);
+	void	RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname);
+	void	RPL_PRIVMSG(int cl_fd, std::string nick, std::string tname, std::string msg);
 
 
 	// PRIVMSG
@@ -50,3 +54,4 @@ public:
 	// KICK
 	// MODE
 };
+#endif 
