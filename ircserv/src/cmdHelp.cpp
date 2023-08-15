@@ -8,11 +8,9 @@ void	serv::sendAll(std::map<int, User> use, std::string cmd, std::string msg)
 	}
 }
 
-bool	serv::checkChannelNameKey(std::vector<std::string> arr, bool flag)
+bool	serv::checkChannelNameKey(std::vector<std::string> arr)
 {
-	if (flag && ((arr[0][0] != '&') || (arr[0][0] == '&' && arr[1][0] != '#')))
-		return false;
-	else if (!flag && arr[0][0] != '#')
+	if (arr[0][0] != '#')
 		return false;
 	return true;
 }
@@ -28,7 +26,8 @@ map<std::string, Channel>::iterator serv::findChannelsFromUsers(std::string name
 			return it;
 	}
 	i = users.begin();
-	return i->second.getChannels().end();
+	it = i->second.getChannels().end();
+	return it;
 }
 
 void	serv::sendReplyToJoin(Channel &chan, User &user)
@@ -57,7 +56,7 @@ void	serv::sendReplyToJoin(Channel &chan, User &user)
 		oper.append(user.getNickName());
 		oper.append(" ");
 	}
-	else
+	else if (chan.getMembers().find(user.getUserFD()) == chan.getMembers().end())
 	{
 		members.append("+");
 		members.append(user.getNickName());						
@@ -76,7 +75,7 @@ void	serv::sendReplyToJoin(Channel &chan, User &user)
 
 bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag)
 {
-	if (chan.getChannelKey().empty() && flag)
+	if (flag)
 	{
 		if (chan.oper.find(user.getNickName()) == chan.oper.end())
 		{
@@ -102,7 +101,7 @@ bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, b
 		{
 			if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 			{
-				if (checkChannelNameKey(arr, true))
+				if (arr[0][0] == '#')
 					sendReplyToJoin(chan, user);
 				else
 				{
@@ -127,8 +126,10 @@ bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, b
 
 bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag)
 {
-	if (chan.getChannelKey().empty() && flag)
+	if (flag)
 	{
+		if (arr[0][0] != '#')
+			arr[0] = '#' + arr[0];
 		chan.setChannelName(arr[0]);
 	}
 	if (chan.bans.find(user.getNickName()) != chan.bans.end())
@@ -140,11 +141,11 @@ bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, b
 	{
 		if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 		{
-			if (checkChannelNameKey(arr, false))
-					sendReplyToJoin(chan, user);
+			if (chan.getChannelKey().empty())
+				sendReplyToJoin(chan, user);
 			else
 			{
-				msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
+				msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), arr[0]);
 				return true;
 			}
 		}
@@ -159,18 +160,18 @@ bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, b
 
 void	serv::joinChannel(User &user, Channel &chan, std::vector<string> arr, bool flag)
 {
-	if (arr.size() == 2)
+	if (arr.size() >= 2)
 	{
 		if (joinWithTwoArgs(user, chan, arr, flag))
 			return ;
 	}
-	else if (arr.size() == 1)
+	else if (arr.size() == 1 && chan.getChannelKey().empty())
 	{
 		if (joinWithOneArgs(user, chan, arr, flag))
-		{
 			return ;
-		}
 	}
+	else
+		return ;
 	chan.setMembers(user.getUserFD(), user);
 	user.setChannels(chan.getChannelName(), chan);
 }

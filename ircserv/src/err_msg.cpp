@@ -130,9 +130,9 @@ void	err_msg::RPL_QUIT(int cl_fd, std::string nick, std::string msg)
 	send(cl_fd, (":QUIT@localhost " + nick + " " + msg + "\n").c_str(), 19 + nick.size() + msg.size(), 0);
 }
 
-void	err_msg::RPL_INVITE(int cl_fd, std::string cname, std::string nick)
+void	err_msg::RPL_INVITING(int cl_fd, std::string cname, std::string nick)
 {
-	send(cl_fd, (":INVITE@localhost " + cname + " " + nick + "\n").c_str(), 21 + nick.size() + cname.size(), 0);
+	send(cl_fd, (":INVITE@localhost 341 " + cname + " " + nick + "\n").c_str(), 25 + nick.size() + cname.size(), 0);
 }
 
 void	err_msg::RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string topic)

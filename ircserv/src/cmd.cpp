@@ -239,19 +239,10 @@ void	serv::join(string b, User &user)
 	}
 	else
 	{
-		if (!i->second.i)
-		{
-			cout << "1" << endl;
-			Channel chan(arr[0]);
-			chan.oper.insert(std::pair<std::string, bool> (user.getNickName(), true));
-			joinChannel(user, chan, arr, true);
-		}
-		else
-		{
-			msg_err.ERR_INVITEONLYCHAN(user.getUserFD(), arr[0]);
-			return ;
-		}
-
+		cout << "1" << endl;
+		Channel chan(arr[0]);
+		chan.oper.insert(std::pair<std::string, bool> (user.getNickName(), true));
+		joinChannel(user, chan, arr, true);
 	}
 	
 }
@@ -260,31 +251,34 @@ void	serv::kick(std::string b, User &user)
 {
 	std::vector<std::string> arr = split(b);
 
-	if (arr.empty() || (!arr.empty() && arr[0].empty()) || (!arr[0].empty() && arr[1].empty()))
+	if (arr.size() < 2)
 	{
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "KICK");
 		return ;
 	}
 	std::map<std::string, Channel>::iterator i = user.getChannels().find(arr[0]);
-	if (i->second.oper.find(user.getNickName()) != i->second.oper.end())
+	if (i != user.getChannels().end())
 	{
-		if (i == user.getChannels().end())
+		if (i->second.oper.find(user.getNickName()) != i->second.oper.end())
 		{
-			msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
+			std::map<int, User>::iterator it = i->second.getMembers().find(findUserByNick(arr[1]));
+			if (it == i->second.getMembers().end())
+			{
+				msg_err.ERR_NOSUCHNICK(user.getUserFD(), arr[1]);
+				return ;
+			}
+			sendAll(i->second.getMembers(), "KICK", "kick " + it->second.getNickName() + " from " + i->second.getChannelName());
+			i->second.getMembers().erase(it);
+		}
+		else
+		{
+			msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
 			return ;
 		}
-		std::map<int, User>::iterator it = i->second.getMembers().find(findUserByNick(arr[0]));
-		if (it == i->second.getMembers().end())
-		{
-			msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
-			return ;
-		}
-		sendAll(i->second.getMembers(), "KICK", "kick " + it->second.getNickName() + " from " + i->second.getChannelName());
-		i->second.getMembers().erase(it);
 	}
 	else
 	{
-		msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
+		msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
 		return ;
 	}
 }
@@ -292,22 +286,15 @@ void	serv::kick(std::string b, User &user)
 void	serv::invite(std::string b, User &user)
 {
 	std::vector<std::string> arr = split(b);
-	if (arr.empty() || (!arr.empty() && arr[0].empty()) || (!arr[0].empty() && arr[1].empty()))
+	if (arr.size() < 2)
 	{
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "INVITE");
 		return ;
 	}
-
-	std::map<std::string, Channel>::iterator ii = user.getChannels().find(arr[1]);
-	if (ii == user.getChannels().end())
+	std::map<std::string, Channel>::iterator ch = user.getChannels().find(arr[1]);
+	if (ch == user.getChannels().end())
 	{
 		msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
-		return ;
-	}
-	std::map<int, User>::iterator it = ii->second.getMembers().find(findUserByNick(arr[0]));
-	if (it != ii->second.getMembers().end())
-	{
-		msg_err.ERR_USERONCHANNEL(user.getUserFD(), arr[1], arr[0]);
 		return ;
 	}
 	if (!findUserByNick(arr[0]))
@@ -315,15 +302,23 @@ void	serv::invite(std::string b, User &user)
 		msg_err.ERR_NOSUCHNICK(user.getUserFD(), arr[0]);
 		return ;
 	}
-	if (ii->second.i && ii->second.oper.find(user.getNickName()) == ii->second.oper.end())
+	std::map<int, User>::iterator it = ch->second.getMembers().find(findUserByNick(arr[0]));
+	if (it != ch->second.getMembers().end())
+	{
+		msg_err.ERR_USERONCHANNEL(user.getUserFD(), arr[1], arr[0]);
+		return ;
+	}
+	if (ch->second.i && ch->second.oper.find(user.getNickName()) == ch->second.oper.end())
 	{
 		msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[1]);
 		return ;
 	}
-	ii->second.setMembers(it->second.getUserFD(), it->second);
-	it->second.setChannels(ii->second.getChannelName(), ii->second);
-	sendAll(ii->second.getMembers(), ":INVITE@localhost", "the " + arr[0] + " entered to the channel"); 
-	msg_err.RPL_INVITE(user.getUserFD(), ii->second.getChannelName(), user.getNickName());
+	cout << it->second.getUserFD() << endl;
+	ch->second.setMembers(findUserByNick(arr[0]), users.find(findUserByNick(arr[0]))->second);
+	users.find(findUserByNick(arr[0]))->second.setChannels(ch->second.getChannelName(), ch->second);
+	// it->second.setChannels(ch->second.getChannelName(), ch->second);
+	// sendAll(ch->second.getMembers(), ":INVITE@localhost", "the " + arr[0] + " entered to the channel"); 
+	msg_err.RPL_INVITING(user.getUserFD(), ch->second.getChannelName(), user.getNickName());
 }
 
 void	serv::topic(std::string b, User &user)
@@ -373,8 +368,7 @@ void	serv::topic(std::string b, User &user)
 void	serv::mode(string b, User &user)
 {
 	std::vector<std::string> arr = split(b);
-	if (arr.empty() || (!arr.empty() && arr[0].empty()) || (!arr[0].empty() && arr[1].empty())
-		|| (!arr[0].empty() && !arr[1].empty() && arr[2].empty()))
+	if (arr.size() < 2)
 	{
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
 		return ;
@@ -385,6 +379,16 @@ void	serv::mode(string b, User &user)
 		msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
 		return ;
 	}
+
+
+	map<std::string, bool>::iterator m = it->second.oper.begin();
+	for (; m != it->second.oper.end(); m++)
+		cout << "opers = " << m->first <<endl;
+	map<int, User>::iterator a = it->second.getMembers().begin();
+	for (; a != it->second.getMembers().end(); a++)
+		cout << "members = " << a->first <<endl;
+	
+	
 	if ((it->second.oper.find(user.getNickName())) == it->second.oper.end())
 	{
 		msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
@@ -401,94 +405,121 @@ void	serv::mode(string b, User &user)
 	while (++i != 5 && mode[i][0] != arr[1][1]);
 	switch (i)
 	{
-	case 0:
+	case 0: // i (invite only channel)
 		if (arr[1][0] == '+')
 			it->second.i = true;
 		else if (arr[1][0] == '-')
 			it->second.i = false;
 		break;
-	case 1:
+	case 1: // t (show topic or not)
 		if (arr[1][0] == '+')
 			it->second.t = true;
 		else if (arr[1][0] == '-')
 			it->second.t = false;
 		break;
-	case 2:
+	case 2: // k (set/delet key)
 		if (arr[1][0] == '+')
 		{
-			if (it->second.oper.find(user.getNickName()) != it->second.oper.end())
-				it->second.setChannelKey(arr[2]);
-			else
+			cout << arr.size() << endl;
+			if (arr.size() >= 3)
 			{
-				msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
-				return ;
-			}
-		}
-		else if (arr[1][0] == '-')
-		{
-			if (it->second.oper.find(user.getNickName()) != it->second.oper.end())
-				it->second.setChannelKey("");
-			else
-			{
-				msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
-				return ;
-			}
-		}
-		break;
-	case 3:
-		if (arr[1][0] == '+')
-		{
-			if (it->second.oper.find(user.getNickName()) != it->second.oper.end())
-				it->second.oper.insert(make_pair<string, bool> (arr[2], true));	
-			else
-			{
-				msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
-				return ;
-			}
-		}
-		else if (arr[1][0] == '-')
-		{
-			if (it->second.oper.find(user.getNickName()) != it->second.oper.end())
-				it->second.oper.erase(arr[2]);	
-			else
-			{
-				msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
-				return ;
-			}
-		}
-
-		break;
-	case 4:
-		if (arr[1][0] == '+')
-		{
-			if (it->second.oper.find(user.getNickName()) != it->second.oper.end())
-			{
-				it->second.l = true;
-				int i = std::atoi(arr[2].c_str());
-				if (i >= 0 && i < 10)
-					it->second.max = std::atoi(arr[2].c_str());
+				if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+					it->second.setChannelKey(arr[2]);
 				else
 				{
-					send(user.getUserFD(), ":MODE@localhost Invalid limit\n", 20, 0);
+					msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
 					return ;
 				}
 			}
 			else
 			{
-				msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
+				msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
 				return ;
 			}
 		}
 		else if (arr[1][0] == '-')
 		{
-			if (it->second.oper.find(user.getNickName()) != it->second.oper.end())
+			if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+				it->second.setChannelKey("");
+			else
+			{
+				msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
+				return ;
+			}
+		}
+		break;
+	case 3: // o (give operator)
+		if (arr.size() >= 3)
+		{
+			if (arr[1][0] == '+')
+			{
+					if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+					{
+						it->second.oper[arr[2]] = true;
+					}
+					else
+					{
+						msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
+						return ;
+					}
+			}
+			else if (arr[1][0] == '-')
+			{
+				if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+					it->second.oper.erase(arr[2]);
+				else
+				{
+					msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
+					return ;
+				}
+			}
+		}
+		else
+		{
+			msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
+			return ;
+		}
+
+		break;
+	case 4: // l (set member limit on channel)
+		if (arr[1][0] == '+')
+		{
+			if (arr.size() >= 3)
+			{
+				if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+				{
+					it->second.l = true;
+					int i = std::atoi(arr[2].c_str());
+					if (i >= 0 && i < 10)
+						it->second.max = std::atoi(arr[2].c_str());
+					else
+					{
+						send(user.getUserFD(), ":MODE@localhost Invalid limit\n", 20, 0);
+						return ;
+					}
+				}
+				else
+				{
+					msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
+					return ;
+				}
+			}
+			else
+			{
+				msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
+				return ;
+			}
+		}
+		else if (arr[1][0] == '-')
+		{
+			if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
 			{
 				it->second.l = false;
 				it->second.max = 0;
 			}
 			else
 			{
-				msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[0]);
+				msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
 				return ;
 			}
 		}

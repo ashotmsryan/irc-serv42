@@ -20,3 +20,14 @@ std::string	Channel::getChannelKey(){return (key);}
 
 void	Channel::setChannelTopic(std::string t){topic = t;}
 std::string	Channel::getChannelTopic(){return (topic);}
+
+map<int, User>::iterator Channel::findUserFromChannel(std::string name)
+{
+	map<int, User>::iterator i = members.begin();
+	for (; i != members.end(); i++)
+	{
+		if (i->second.getNickName() == name)
+			return i;
+	}
+	return members.end();
+}

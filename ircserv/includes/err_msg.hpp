@@ -39,7 +39,7 @@ public:
 
 	void	RPL_PONG(int cl_fd, std::string nick);
 	void	RPL_QUIT(int cl_fd, std::string nick, std::string msg);
-	void	RPL_INVITE(int cl_fd, std::string cname, std::string nick);
+	void	RPL_INVITING(int cl_fd, std::string cname, std::string nick);
 	void	RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string topic);
 	
 	// void	RPL_JOIN(int cl_fd, std::string nick, std::string cname);

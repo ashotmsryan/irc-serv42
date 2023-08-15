@@ -14,14 +14,14 @@ class serv : public Data
 {
 	map<int, User> users;
 	map<string, void(serv::*)(string, User&)> cmd;
-
+	std::vector<int> fd;
 	bool	checkSockFD();
 	int		maxFD();
 	bool	checkCommand(char *buf);
 	bool	read_write(int fd);
 	int		findUserByNick(string nick);
 	void	joinChannel(User &user, Channel &chan, std::vector<string> arr, bool flag);
-	bool	checkChannelNameKey(std::vector<std::string> arr, bool flag);
+	bool	checkChannelNameKey(std::vector<std::string> arr);
 	bool	joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	bool	joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	void	sendReplyToJoin(Channel &chan, User &user);

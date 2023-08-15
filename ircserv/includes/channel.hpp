@@ -31,6 +31,9 @@ public:
 
 	void	setChannelTopic(std::string t);
 	std::string getChannelTopic();
+	
+	map<int, User>::iterator findUserFromChannel(std::string name);
+
 };
 
 #endif
