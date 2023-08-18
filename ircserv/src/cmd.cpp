@@ -154,7 +154,7 @@ void	serv::quit(string b, User &user) // delete from channels
 		msg_err.RPL_QUIT(user.getUserFD(), user.getNickName(), "");
 	else
 		msg_err.RPL_QUIT(user.getUserFD(), user.getNickName(), b);
-	getpeername(user.getUserFD(), (struct sockaddr*)(&def), (socklen_t*)&addrlen);
+	// getpeername(user.getUserFD(), (struct sockaddr*)(&def), (socklen_t*)&addrlen);
 	FD_CLR(user.getUserFD(), &def);
 	close(user.getUserFD());
 	users.erase(user.getUserFD());
@@ -206,9 +206,12 @@ void	serv::privmsg(string b, User &user)
 		msg_err.ERR_CANNOTSENDTOCHAN(user.getUserFD(), part[0]);
 		return ;
 	}
-	std::map<std::string, Channel>::iterator i = user.getChannels().find(part[0]);
-	for (std::map<int, User>::iterator it = i->second.getMembers().begin(); it != i->second.getMembers().end(); it++)
+	std::map<std::string, Channel&>::iterator i = user.getChannels().find(part[0]);
+	std::string prefix = ":" + user.getNickName() + "@localhost PRIVMSG ";
+	std::string uname;
+	for (std::map<int, User&>::iterator it = i->second.getMembers().begin(); it != i->second.getMembers().end(); it++)
 	{
+		msg = prefix + it->second.getNickName() + " " + msg;
 		if (it->second.getUserFD() != user.getUserFD())
 			send(it->second.getUserFD(), msg.c_str(), msg.size() ,0);
 	}
@@ -223,8 +226,9 @@ void	serv::join(string b, User &user)
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "JOIN");
 		return ;
 	}
-	map<std::string, Channel>::iterator i = findChannelsFromUsers(arr[0]);
-	if (i != (users.begin())->second.getChannels().end())
+
+	map<std::string, Channel>::iterator i = all_channels.find(arr[0]);
+	if (i != all_channels.end())
 	{
 		if (!i->second.i)
 		{
@@ -256,18 +260,18 @@ void	serv::kick(std::string b, User &user)
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "KICK");
 		return ;
 	}
-	std::map<std::string, Channel>::iterator i = user.getChannels().find(arr[0]);
+	std::map<std::string, Channel&>::iterator i = user.getChannels().find(arr[0]);
 	if (i != user.getChannels().end())
 	{
 		if (i->second.oper.find(user.getNickName()) != i->second.oper.end())
 		{
-			std::map<int, User>::iterator it = i->second.getMembers().find(findUserByNick(arr[1]));
+			std::map<int, User&>::iterator it = i->second.getMembers().find(findUserByNick(arr[1]));
 			if (it == i->second.getMembers().end())
 			{
 				msg_err.ERR_NOSUCHNICK(user.getUserFD(), arr[1]);
 				return ;
 			}
-			sendAll(i->second.getMembers(), "KICK", "kick " + it->second.getNickName() + " from " + i->second.getChannelName());
+			sendAll(i->second.getMembers(), ":KICK@localhost ", "KICK " + i->second.getChannelName() + " " + it->second.getNickName());
 			i->second.getMembers().erase(it);
 		}
 		else
@@ -291,7 +295,7 @@ void	serv::invite(std::string b, User &user)
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "INVITE");
 		return ;
 	}
-	std::map<std::string, Channel>::iterator ch = user.getChannels().find(arr[1]);
+	std::map<std::string, Channel&>::iterator ch = user.getChannels().find(arr[1]);
 	if (ch == user.getChannels().end())
 	{
 		msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
@@ -302,12 +306,13 @@ void	serv::invite(std::string b, User &user)
 		msg_err.ERR_NOSUCHNICK(user.getUserFD(), arr[0]);
 		return ;
 	}
-	std::map<int, User>::iterator it = ch->second.getMembers().find(findUserByNick(arr[0]));
-	if (it != ch->second.getMembers().end())
+	std::map<int, User>::iterator it = users.find(findUserByNick(arr[0]));
+	if (it == users.end())
 	{
 		msg_err.ERR_USERONCHANNEL(user.getUserFD(), arr[1], arr[0]);
 		return ;
 	}
+	cout << it->first << endl;
 	if (ch->second.i && ch->second.oper.find(user.getNickName()) == ch->second.oper.end())
 	{
 		msg_err.ERR_CHANOPRIVSNEEDED(user.getUserFD(), arr[1]);
@@ -315,10 +320,10 @@ void	serv::invite(std::string b, User &user)
 	}
 	cout << it->second.getUserFD() << endl;
 	ch->second.setMembers(findUserByNick(arr[0]), users.find(findUserByNick(arr[0]))->second);
-	users.find(findUserByNick(arr[0]))->second.setChannels(ch->second.getChannelName(), ch->second);
+	it->second.setChannels(ch->second.getChannelName(), ch->second);
 	// it->second.setChannels(ch->second.getChannelName(), ch->second);
 	// sendAll(ch->second.getMembers(), ":INVITE@localhost", "the " + arr[0] + " entered to the channel"); 
-	msg_err.RPL_INVITING(user.getUserFD(), ch->second.getChannelName(), user.getNickName());
+	msg_err.RPL_INVITING(user.getUserFD(), ch->second.getChannelName(), arr[1]);
 }
 
 void	serv::topic(std::string b, User &user)
@@ -329,7 +334,7 @@ void	serv::topic(std::string b, User &user)
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "JOIN");
 		return ;
 	}
-	std::map<std::string, Channel>::iterator it = user.getChannels().find(arr[0]);
+	std::map<std::string, Channel&>::iterator it = user.getChannels().find(arr[0]);
 	if (it == user.getChannels().end())
 	{
 		msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
@@ -373,7 +378,7 @@ void	serv::mode(string b, User &user)
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
 		return ;
 	}
-	std::map<std::string, Channel>::iterator it = user.getChannels().find(arr[0]);
+	std::map<std::string, Channel&>::iterator it = user.getChannels().find(arr[0]);
 	if (it == user.getChannels().end())
 	{
 		msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
@@ -384,7 +389,7 @@ void	serv::mode(string b, User &user)
 	map<std::string, bool>::iterator m = it->second.oper.begin();
 	for (; m != it->second.oper.end(); m++)
 		cout << "opers = " << m->first <<endl;
-	map<int, User>::iterator a = it->second.getMembers().begin();
+	map<int, User&>::iterator a = it->second.getMembers().begin();
 	for (; a != it->second.getMembers().end(); a++)
 		cout << "members = " << a->first <<endl;
 	
@@ -453,15 +458,15 @@ void	serv::mode(string b, User &user)
 		{
 			if (arr[1][0] == '+')
 			{
-					if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
-					{
-						it->second.oper[arr[2]] = true;
-					}
-					else
-					{
-						msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
-						return ;
-					}
+				if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+				{
+					it->second.oper[arr[2]] = true;
+				}
+				else
+				{
+					msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
+					return ;
+				}
 			}
 			else if (arr[1][0] == '-')
 			{
@@ -527,3 +532,40 @@ void	serv::mode(string b, User &user)
 	}
 }
 
+
+void	serv::notice(std::string b, User &user)
+{
+	string nick;
+	string msg;
+	size_t sp = b.find(":");
+
+	if (sp == string::npos)
+		return ;
+	nick = b.substr(0, sp);
+	msg = b.substr(sp, b.size());
+	msg = msg.substr(msg.find(":"), msg.size());
+	std::vector<std::string> part = split(nick);
+	if (part.empty())
+		return ;
+	else if (part.size() != 1)
+		return ;
+	else if (msg.empty())
+		return ;
+	else if (user.getChannels().find(part[0]) == user.getChannels().end())
+	{
+		if (!findUserByNick(part[0]))
+			return ;
+		else
+		{
+			msg_err.RPL_PRIVMSG(findUserByNick(part[0]), user.getNickName(), part[0], msg);
+			return;
+		}
+		return ;
+	}
+	std::map<std::string, Channel&>::iterator i = user.getChannels().find(part[0]);
+	for (std::map<int, User&>::iterator it = i->second.getMembers().begin(); it != i->second.getMembers().end(); it++)
+	{
+		if (it->second.getUserFD() != user.getUserFD())
+			send(it->second.getUserFD(), msg.c_str(), msg.size() ,0);
+	}
+}

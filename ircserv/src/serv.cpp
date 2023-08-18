@@ -5,12 +5,12 @@ serv::serv()
 	cmd["USER"] = &serv::user;
 	cmd["PASS"] = &serv::pass;
 	cmd["NICK"] = &serv::nick;
-	cmd["PING"] = &serv::ping;//chem imanum
-	cmd["PONG"] = &serv::pong;//chem imanum
+	cmd["PING"] = &serv::ping;
+	cmd["PONG"] = &serv::pong;
 	cmd["QUIT"] = &serv::quit;
 	cmd["PRIVMSG"] = &serv::privmsg;//kisat
 	cmd["CAP"] = &serv::cap;
-	// cmd["ERROR"] = &serv::error;
+	cmd["NOTICE"] = &serv::notice;
 	// cmd["AUTHENTICATE"] = &serv::authenticate;
 	
 	cmd["JOIN"] = &serv::join;
@@ -37,7 +37,6 @@ int	serv::maxFD()
 
 	for(map<int, User>::iterator i = users.begin(); i != users.end(); i++)
 	{
-		// cout << "eeeeeeee" <<endl;
 		if (i->second.getUserFD() > max)
 			max = i->second.getUserFD();
 	}
@@ -74,21 +73,24 @@ bool	serv::read_write(int fd)
     {
 		if(fd != serv_fd)
 		{
-			getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
+			// getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
 			cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
 	    	FD_CLR(fd, &def);
-			map<std::string, Channel>::iterator i = users.find(fd)->second.getChannels().begin();
-			map<int, User>::iterator u;
-			for(; i != users.find(fd)->second.getChannels().end(); i++)
+			map<std::string, Channel>::iterator i = all_channels.begin();
+			map<int, User&>::iterator u;
+			for(; i != all_channels.end(); i++)
 			{
-				cout << "hasav" << endl;
 				u = i->second.getMembers().find(fd);
 				if (u != i->second.getMembers().end())
 				{
 					if (i->second.oper.find(users.find(fd)->second.getNickName()) != i->second.oper.end())
 						i->second.oper.erase(i->second.oper.find(users.find(fd)->second.getNickName()));
 					i->second.getMembers().erase(u);
+					if (i->second.getMembers().empty())
+						all_channels.erase(i);
 				}
+				if (all_channels.empty())
+					break ;
 			}
 			users.erase(fd);
 			if (fd != -1)
@@ -161,7 +163,6 @@ bool	serv::startServ()
 	int select_flag;
 	fd_set	readFD;
 	fd_set	writeFD;
-	// fd_set	writeFD;
 
 	//clear the socket set
 	FD_ZERO(&def);
@@ -172,14 +173,14 @@ bool	serv::startServ()
 	t.tv_sec = 0;
 	cout << "ServerFD = "<< serv_fd << endl;
 	fcntl(serv_fd, F_SETFL, O_NONBLOCK);
+	FD_SET(serv_fd, &def);
 	while (true)
 	{
-		FD_SET(serv_fd, &def);
 		writeFD = readFD = def;
  		//wait for an activity on one of the sockets , timeout is NULL
         //so wait indefinitely 
 		select_flag = select(maxFD() + 1, &readFD, &writeFD, NULL, NULL);
-		if (select_flag <= 0 && errno != EINTR)
+		if (select_flag <= 0)
 		{
 			std::cout << "select :Something went wrong" << std::endl;
 			continue;
@@ -187,22 +188,18 @@ bool	serv::startServ()
 		// cout << "maxFD = " << maxFD() << endl;
 		for (int fd = 2; fd <= maxFD(); fd++)
         {
-
             if (FD_ISSET(fd, &readFD))
             {
+				cout << "reading from " << fd << endl;
                 if (fd == serv_fd)
                 {
                     add_client();
-                    break;
                 }
                 else
 				{
-					if (FD_ISSET(fd, &readFD))
+					if (read_write(fd))
 					{
-						if (read_write(fd))
-						{
-							break ;
-						}
+						break ;
 					}
 				}
 			}

@@ -110,7 +110,7 @@ void	err_msg::ERR_BANNEDFROMCHAN(int cl_fd, std::string cname)
 
 void	err_msg::ERR_CHANNELISFULL(int cl_fd, std::string cname)
 {
-	send(cl_fd, (":" + cname + "@localhost 471 Cannot join channel (+l)\n").c_str(), (cname.size() + 43), 0);
+	send(cl_fd, (":" + cname + "@localhost 471 Cannot join channel (+l)\n").c_str(), (cname.size() + 42), 0);
 }
 
 void	err_msg::ERR_BADCHANNELKEY(int cl_fd, std::string cname)
@@ -162,5 +162,10 @@ void	err_msg::RPL_REGISTER(int cl_fd, std::string nick)
 
 void	err_msg::RPL_PRIVMSG(int cl_fd, std::string nick, std::string tname, std::string msg)
 {
-	send(cl_fd, (":" + nick + "@localhost PRIVMSG " + tname + " " + msg + "\n").c_str(), 23 + nick.size() + tname.size() + msg.size(), 0);
+	send(cl_fd, (":" + nick + "@localhost PRIVMSG " + tname + " " + msg).c_str(), 22 + nick.size() + tname.size() + msg.size(), 0);
+}
+
+void	err_msg::RPL_NOTICE(int cl_fd, std::string nick, std::string tname, std::string msg)
+{
+	send(cl_fd, (":" + nick + "@localhost NOTICE " + tname + " " + msg).c_str(), 21 + nick.size() + tname.size() + msg.size(), 0);
 }

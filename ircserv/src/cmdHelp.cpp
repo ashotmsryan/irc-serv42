@@ -1,8 +1,8 @@
 #include "../includes/serv.hpp"
 
-void	serv::sendAll(std::map<int, User> use, std::string cmd, std::string msg)
+void	serv::sendAll(std::map<int, User&> use, std::string cmd, std::string msg)
 {
-	for (std::map<int, User>::iterator i = use.begin(); i != use.end(); i++)
+	for (std::map<int, User&>::iterator i = use.begin(); i != use.end(); i++)
 	{
 		send(i->second.getUserFD(), (cmd + msg).c_str(), cmd.size() + msg.size(), 0);
 	}
@@ -15,24 +15,23 @@ bool	serv::checkChannelNameKey(std::vector<std::string> arr)
 	return true;
 }
 
-map<std::string, Channel>::iterator serv::findChannelsFromUsers(std::string name)
+map<std::string, Channel&>::iterator serv::findChannelsFromUsers(std::string name)
 {
 	map<int, User>::iterator i = users.begin();
-	map<std::string, Channel>::iterator it;
+	map<std::string, Channel&>::iterator it;
 	for (; i != users.end(); i++)
 	{
 		it = i->second.getChannels().find(name);
 		if (it->first == name)
 			return it;
 	}
-	i = users.begin();
-	it = i->second.getChannels().end();
+	it = (users.begin())->second.getChannels().end();
 	return it;
 }
 
 void	serv::sendReplyToJoin(Channel &chan, User &user)
 {
-	std::map<int, User>::iterator i = chan.getMembers().begin();
+	std::map<int, User&>::iterator i = chan.getMembers().begin();
 	std::string members;
 	std::string oper;
 	for (; i != chan.getMembers().end(); i++)
@@ -77,12 +76,13 @@ bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, b
 {
 	if (flag)
 	{
-		if (chan.oper.find(user.getNickName()) == chan.oper.end())
+		if (chan.oper.find(user.getNickName()) != chan.oper.end())
 		{
 			chan.setChannelKey(arr[1]);
 			if (arr[0][0] != '#')
 				arr[0] = '#' + arr[0];
 			chan.setChannelName(arr[0]);
+			sendReplyToJoin(chan, user);
 		}
 		else
 		{
@@ -126,12 +126,14 @@ bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, b
 
 bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag)
 {
+	cout << "aaaaa" << endl;
 	if (flag)
 	{
 		if (arr[0][0] != '#')
 			arr[0] = '#' + arr[0];
 		chan.setChannelName(arr[0]);
 	}
+	cout << "aaaaa" << endl;
 	if (chan.bans.find(user.getNickName()) != chan.bans.end())
 	{
 		msg_err.ERR_BANNEDFROMCHAN(user.getUserFD(), arr[0]);
@@ -139,6 +141,7 @@ bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, b
 	}
 	else
 	{
+		cout << "max = " << chan.max << "size = " << chan.getMembers().size() << endl;
 		if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 		{
 			if (chan.getChannelKey().empty())
@@ -172,6 +175,7 @@ void	serv::joinChannel(User &user, Channel &chan, std::vector<string> arr, bool 
 	}
 	else
 		return ;
-	chan.setMembers(user.getUserFD(), user);
-	user.setChannels(chan.getChannelName(), chan);
+	all_channels.insert(std::make_pair<std::string, Channel>(chan.getChannelName(), chan));
+	all_channels.find(chan.getChannelName())->second.setMembers(user.getUserFD(), user);
+	user.setChannels(all_channels.find(chan.getChannelName())->first, all_channels.find(chan.getChannelName())->second);
 }

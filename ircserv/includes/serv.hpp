@@ -25,11 +25,14 @@ class serv : public Data
 	bool	joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	bool	joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	void	sendReplyToJoin(Channel &chan, User &user);
-	void	sendAll(std::map<int, User> use, std::string cmd, std::string msg);
+	void	sendAll(std::map<int, User&> use, std::string cmd, std::string msg);
 
-	map<std::string, Channel>::iterator findChannelsFromUsers(std::string name);
+	map<std::string, Channel&>::iterator findChannelsFromUsers(std::string name);
 public:
 	serv();
+
+
+	std::map<std::string, Channel> all_channels;
 ////////////////////---COMMANDS---//////////////////////
 	void	user(string b, User &user);
 	void	pass(string b, User &user);
@@ -38,7 +41,7 @@ public:
 	void	pong(string b, User &user);
 	void	quit(string b, User &user);
 	void	privmsg(string b, User &user);
-	// void	error(string b, User &new_user);
+	void	notice(string b, User &new_user);
 	
 	void	cap(string b, User &user);
 	void	join(string b, User &user);
