@@ -44,8 +44,8 @@ public:
 	
 	// void	RPL_JOIN(int cl_fd, std::string nick, std::string cname);
 	void	RPL_REGISTER(int cl_fd, std::string nick);
-	void	RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members);
-	void	RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname);
+	void	RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members);
+	void	RPL_ENDOFWHO(int cl_fd, std::string nick, std::string cname);
 	void	RPL_PRIVMSG(int cl_fd, std::string nick, std::string tname, std::string msg);
 	void	RPL_NOTICE(int cl_fd, std::string nick, std::string tname, std::string msg);
 

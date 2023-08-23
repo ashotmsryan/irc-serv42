@@ -18,9 +18,10 @@ void	serv::user(string b, User &user)
 		{
 			s = b;
 			arr = split(s);
-			rname = arr.back();
+			if (!arr.empty())
+				rname = arr.back();
 		}
-		if (arr.size() < 3 || (arr.size() <= 3 && k == string::npos))
+		if (arr.empty() || arr.size() < 3 || (arr.size() <= 3 && k == string::npos))
 		{
 			msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "USER");
 			return;
@@ -44,23 +45,32 @@ void	serv::pass(string b, User &user)
 {
 	std::vector<string> arr = split(b);
 
+	size_t i = b.find(':');
+	
 	if (arr.size() < 1)
 	{
 		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "PASS");
 		return ;
 	}
+	if (user.getPassFlag())
+	{
+		msg_err.ERR_ALREADYREGISTRED(user.getUserFD(), user.getNickName());
+		return ;
+	}
 	else if (arr[0] == password)
 	{
-		if (!user.getPassFlag())
+		user.changePassFlag();
+		send(user.getUserFD(), "PASS :You loged in\n", 19, 0);
+		if (!user.functionality && !user.getNickName().empty() && !user.getHostName().empty())
 		{
-			user.changePassFlag();
-			send(user.getUserFD(), "PASS :You loged in\n", 19, 0);
+			msg_err.RPL_REGISTER(user.getUserFD(), user.getNickName());
+			user.functionality = true;
 		}
-		else
-		{
-			msg_err.ERR_ALREADYREGISTRED(user.getUserFD(), user.getNickName());
-			return ;
-		}
+	}
+	else if(i != std::string::npos && password.compare(&(arr[0].c_str())[i + 1]))
+	{
+		user.changePassFlag();
+		send(user.getUserFD(), "PASS :You loged in\n", 19, 0);
 		if (!user.functionality && !user.getNickName().empty() && !user.getHostName().empty())
 		{
 			msg_err.RPL_REGISTER(user.getUserFD(), user.getNickName());
@@ -74,7 +84,12 @@ void	serv::nick(string b, User &user)
 {
 	std::vector<string> arr = split(b);
 
-	if (arr.size() > 2 || arr[0].find_first_of(",@!:") != string::npos || arr[0].size() > MaxLenght)
+	if (arr.empty())
+	{
+		msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "NICK");
+		return ;
+	}
+	if (arr[0].find_first_of(",@!:") != string::npos || arr[0].size() > MaxLenght)
 	{
 		msg_err.ERR_ERRONEUSNICKNAME(user.getUserFD(), user.getNickName());
 		return;
@@ -156,9 +171,10 @@ void	serv::quit(string b, User &user) // delete from channels
 		msg_err.RPL_QUIT(user.getUserFD(), user.getNickName(), b);
 	// getpeername(user.getUserFD(), (struct sockaddr*)(&def), (socklen_t*)&addrlen);
 	FD_CLR(user.getUserFD(), &def);
+	removeFromChannels(user.getUserFD());
+	cout << user.getUserFD() << endl;
 	close(user.getUserFD());
 	users.erase(user.getUserFD());
-	cout << "##########################################################################" <<std::endl;
 }
 
 void	serv::privmsg(string b, User &user)
@@ -273,6 +289,8 @@ void	serv::kick(std::string b, User &user)
 			}
 			sendAll(i->second.getMembers(), ":KICK@localhost ", "KICK " + i->second.getChannelName() + " " + it->second.getNickName());
 			i->second.getMembers().erase(it);
+			if (i->second.getMembers().empty())
+				all_channels.erase(i->second.getChannelName());
 		}
 		else
 		{
@@ -321,9 +339,7 @@ void	serv::invite(std::string b, User &user)
 	cout << it->second.getUserFD() << endl;
 	ch->second.setMembers(findUserByNick(arr[0]), users.find(findUserByNick(arr[0]))->second);
 	it->second.setChannels(ch->second.getChannelName(), ch->second);
-	// it->second.setChannels(ch->second.getChannelName(), ch->second);
-	// sendAll(ch->second.getMembers(), ":INVITE@localhost", "the " + arr[0] + " entered to the channel"); 
-	msg_err.RPL_INVITING(user.getUserFD(), ch->second.getChannelName(), arr[1]);
+	msg_err.RPL_INVITING(user.getUserFD(), ch->second.getChannelName(), arr[0]);
 }
 
 void	serv::topic(std::string b, User &user)
@@ -379,6 +395,7 @@ void	serv::mode(string b, User &user)
 		return ;
 	}
 	std::map<std::string, Channel&>::iterator it = user.getChannels().find(arr[0]);
+	cout << "cname = " << it->first << endl;
 	if (it == user.getChannels().end())
 	{
 		msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
@@ -422,20 +439,11 @@ void	serv::mode(string b, User &user)
 		else if (arr[1][0] == '-')
 			it->second.t = false;
 		break;
-	case 2: // k (set/delet key)
+	case 2: // k (set/delete key)
 		if (arr[1][0] == '+')
 		{
-			cout << arr.size() << endl;
 			if (arr.size() >= 3)
-			{
-				if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
 					it->second.setChannelKey(arr[2]);
-				else
-				{
-					msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
-					return ;
-				}
-			}
 			else
 			{
 				msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
@@ -443,15 +451,7 @@ void	serv::mode(string b, User &user)
 			}
 		}
 		else if (arr[1][0] == '-')
-		{
-			if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
-				it->second.setChannelKey("");
-			else
-			{
-				msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
-				return ;
-			}
-		}
+			it->second.setChannelKey("");
 		break;
 	case 3: // o (give operator)
 		if (arr.size() >= 3)
@@ -484,29 +484,24 @@ void	serv::mode(string b, User &user)
 			msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), "MODE");
 			return ;
 		}
-
 		break;
 	case 4: // l (set member limit on channel)
 		if (arr[1][0] == '+')
 		{
 			if (arr.size() >= 3)
 			{
-				if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
+				if (checkNumber(arr[2]))
 				{
+					cout << "stexaaa" << endl;
 					it->second.l = true;
 					int i = std::atoi(arr[2].c_str());
 					if (i >= 0 && i < 10)
 						it->second.max = std::atoi(arr[2].c_str());
 					else
 					{
-						send(user.getUserFD(), ":MODE@localhost Invalid limit\n", 20, 0);
+						send(user.getUserFD(), ":MODE@localhost Invalid limit\n", 31, 0);
 						return ;
 					}
-				}
-				else
-				{
-					msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
-					return ;
 				}
 			}
 			else
@@ -517,16 +512,8 @@ void	serv::mode(string b, User &user)
 		}
 		else if (arr[1][0] == '-')
 		{
-			if (it->second.findUserFromChannel(arr[2]) != it->second.getMembers().end())
-			{
-				it->second.l = false;
-				it->second.max = 0;
-			}
-			else
-			{
-				msg_err.ERR_NOTONCHANNEL(user.getUserFD(), arr[0]);
-				return ;
-			}
+			it->second.l = false;
+			it->second.max = 0;
 		}
 		break;
 	}
@@ -567,5 +554,62 @@ void	serv::notice(std::string b, User &user)
 	{
 		if (it->second.getUserFD() != user.getUserFD())
 			send(it->second.getUserFD(), msg.c_str(), msg.size() ,0);
+	}
+}
+
+void	serv::who(string b, User &user)
+{
+	std::vector<std::string> arr = split(b);
+	if (!arr.empty())
+	{
+		std::map<std::string, Channel>::iterator c = all_channels.find(arr[0]);
+		std::string members;
+		std::string oper;
+		if (c != all_channels.end())
+		{
+			std::map<int, User&>::iterator i = c->second.getMembers().begin();
+			for (; i != c->second.getMembers().end(); i++)
+			{
+				if (c->second.oper.find(i->second.getNickName()) != c->second.oper.end())
+				{
+					oper.append("@");
+					oper.append(i->second.getNickName());
+					oper.append(" ");
+				}
+				else
+				{
+					members.append("+");
+					members.append(i->second.getNickName());						
+					members.append(" ");
+				}
+			}
+			if (c->second.getMembers().size() == 0)
+			{
+				oper.append("@");
+				oper.append(user.getNickName());
+				oper.append(" ");
+			}
+			else if (c->second.getMembers().find(user.getUserFD()) == c->second.getMembers().end())
+			{
+				members.append("+");
+				members.append(user.getNickName());						
+				members.append(" ");
+			}
+			msg_err.RPL_WHOREPLY(user.getUserFD(), user.getNickName(), c->second.getChannelName(), oper, members);
+			msg_err.RPL_ENDOFWHO(user.getUserFD(), user.getNickName(), c->second.getChannelName());
+		}
+		else if (fromJoinCheck)
+		{
+			members = "";
+			oper.append("@");
+			oper.append(user.getNickName());
+			msg_err.RPL_WHOREPLY(user.getUserFD(), user.getNickName(), arr[0], oper, members);
+			msg_err.RPL_ENDOFWHO(user.getUserFD(), user.getNickName(), arr[0]);
+		}
+		else
+		{
+			msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
+			return ;
+		}
 	}
 }

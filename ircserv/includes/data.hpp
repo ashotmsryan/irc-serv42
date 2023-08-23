@@ -29,6 +29,7 @@ public:
 	int		max_sd;
 	fd_set	def;
 
+	bool	fromJoinCheck;
 	struct sockaddr_in addr;
 	int addrlen;
 	err_msg msg_err;

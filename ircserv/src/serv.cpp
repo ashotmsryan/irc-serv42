@@ -8,27 +8,16 @@ serv::serv()
 	cmd["PING"] = &serv::ping;
 	cmd["PONG"] = &serv::pong;
 	cmd["QUIT"] = &serv::quit;
-	cmd["PRIVMSG"] = &serv::privmsg;//kisat
+	cmd["PRIVMSG"] = &serv::privmsg;
 	cmd["CAP"] = &serv::cap;
 	cmd["NOTICE"] = &serv::notice;
-	// cmd["AUTHENTICATE"] = &serv::authenticate;
+	cmd["WHO"] = &serv::who;
 	
 	cmd["JOIN"] = &serv::join;
 	cmd["KICK"] = &serv::kick;
 	cmd["INVITE"] = &serv::invite;
 	cmd["TOPIC"] = &serv::topic;
 	cmd["MODE"] = &serv::mode;
-}
-
-int	serv::findUserByNick (string nick)
-{
-	map<int, User>::iterator e = users.end();
-	for (map<int, User>::iterator i = users.begin(); i != e; i++)
-	{
-		if (i->second.getNickName() == nick)
-			return (i->first);
-	}
-	return (0);
 }
 
 int	serv::maxFD()
@@ -62,6 +51,33 @@ void	serv::add_client()
 	std::cout << "New client added" << std::endl;	
 }
 
+std::vector<std::string> serv::parsing(std::string buf)
+{
+	size_t i = 0;
+	size_t j = 0;
+	std::vector<std::string> ret;
+	while(buf[i] || (!buf[i] && buf.size() != i))
+	{
+		if (buf[i] == '\n' || buf[i] == '\r')
+		{
+			ret.push_back(buf.substr(j, i));
+			j = i;
+			while(buf[i] && (buf[i] == '\n' || buf[i] == '\r'))
+				i++;
+			j = i;
+		}
+		if (buf[i])
+			i++;
+	}
+	if (buf[buf.size() - 1] != '\n' && buf[buf.size() - 1] != '\r')
+	{
+		ret.push_back(buf.substr(j, buf.size() - j));
+		ret.back().append("\n");
+	}
+	i = 0;
+	return (ret);
+}
+
 
 bool	serv::read_write(int fd)
 {
@@ -76,54 +92,43 @@ bool	serv::read_write(int fd)
 			// getpeername(fd, (struct sockaddr*)(&def), (socklen_t*)&addrlen);
 			cout << "Host disconnected, ip " << inet_ntoa(addr.sin_addr) << ", port " << port << endl;
 	    	FD_CLR(fd, &def);
-			map<std::string, Channel>::iterator i = all_channels.begin();
-			map<int, User&>::iterator u;
-			for(; i != all_channels.end(); i++)
-			{
-				u = i->second.getMembers().find(fd);
-				if (u != i->second.getMembers().end())
-				{
-					if (i->second.oper.find(users.find(fd)->second.getNickName()) != i->second.oper.end())
-						i->second.oper.erase(i->second.oper.find(users.find(fd)->second.getNickName()));
-					i->second.getMembers().erase(u);
-					if (i->second.getMembers().empty())
-						all_channels.erase(i);
-				}
-				if (all_channels.empty())
-					break ;
-			}
+			removeFromChannels(fd);
 			users.erase(fd);
 			if (fd != -1)
 				close(fd);
 		}
 		return true;
     }
-	stringstream ss(buf);
-	ss >> e;
-	map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
-	cout << "client [" << fd << "] = "  << e << std::endl;
-	if(it == cmd.end())
+	std::vector<std::string> lines = parsing(buf);
+	size_t i = 0;
+	while(!lines.empty() && i != lines.size())
 	{
-		msg_err.ERR_UNKNOWNCOMMAND(fd, e);
-	}
-	else
-	{
-		if (users.find(fd)->second.getPassFlag() || (!users.find(fd)->second.getPassFlag() && it->first == "PASS"))
+		cout << "line = [" << lines[i] << "]" <<endl; 
+		stringstream ss(lines[i]);
+		ss >> e;
+		map<string, void(serv::*)(string, User&)>::iterator it = cmd.find(e);
+		cout << "client [" << fd << "] = "  << e << std::endl;
+		if(it == cmd.end())
+			msg_err.ERR_UNKNOWNCOMMAND(fd, e);
+		else
 		{
-			str = buf;
-			str = str.substr(e.size(), str.size() - e.size());
-
-			if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
-				&& ((it->first == "CAP") || (it->first == "USER")
-				|| (it->first == "NICK") || (it->first == "PASS") || (it->first == "PING"))))
-			{	
-				(this->*(it->second))(str, users.find(fd)->second);
+			if (users.find(fd)->second.getPassFlag() || (!users.find(fd)->second.getPassFlag() && it->first == "PASS"))
+			{
+				str = lines[i];
+				str = str.substr(e.size(), str.size() - e.size());
+				if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
+					&& ((it->first == "CAP") || (it->first == "USER")
+					|| (it->first == "NICK") || (it->first == "PASS") || (it->first == "PING"))))
+				{	
+					(this->*(it->second))(str, users.find(fd)->second);
+				}
+				else
+					msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
 			}
 			else
 				msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
 		}
-		else
-			msg_err.ERR_NOTREGISTERED(users.find(fd)->first, e);
+		i++;
 	}
 	return (false);
 }
@@ -190,7 +195,6 @@ bool	serv::startServ()
         {
             if (FD_ISSET(fd, &readFD))
             {
-				cout << "reading from " << fd << endl;
                 if (fd == serv_fd)
                 {
                     add_client();

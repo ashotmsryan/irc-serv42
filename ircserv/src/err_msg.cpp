@@ -143,14 +143,14 @@ void	err_msg::RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string top
 		send(cl_fd, (":" + cname + "@localhost 332" + topic + "\n").c_str(), 17 + cname.size() + topic.size(), 0);
 }
 
-void	err_msg::RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members)
+void	err_msg::RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members)
 {
 	send(cl_fd, ("353 " + nick + " = " + cname + " :" + oper + "\n").c_str(), 10 + nick.size() + cname.size() + oper.size(), 0);
 	if (!members.empty())
 		send(cl_fd, ("353 " + nick + " = " + cname + " :" + members + "\n").c_str(), 10 + nick.size() + cname.size() + members.size(), 0);
 }
 
-void	err_msg::RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname)
+void	err_msg::RPL_ENDOFWHO(int cl_fd, std::string nick, std::string cname)
 {
 	send(cl_fd, ("366 " + nick + " " + cname + " :End of /NAMES list\n").c_str(), cname.size() + nick.size() + 27, 0);
 }
