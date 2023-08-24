@@ -143,7 +143,17 @@ void	err_msg::RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string top
 		send(cl_fd, (":" + cname + "@localhost 332" + topic + "\n").c_str(), 17 + cname.size() + topic.size(), 0);
 }
 
-void	err_msg::RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members)
+void	err_msg::RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::string memb, std::string username)
+{
+	send(cl_fd, ("352 " + nick + " " + cname + " " + username + " 127.0.0.1 irc " + memb + "H :1 " + username + "\n").c_str(), 28 + nick.size() + cname.size() + memb.size() + 2 * username.size(), 0);
+}
+
+void	err_msg::RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname)
+{
+	send(cl_fd, ("366 " + nick + " " + cname + " :End of /NAMES list\n").c_str(), cname.size() + nick.size() + 27, 0);
+}
+
+void	err_msg::RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members)
 {
 	send(cl_fd, ("353 " + nick + " = " + cname + " :" + oper + "\n").c_str(), 10 + nick.size() + cname.size() + oper.size(), 0);
 	if (!members.empty())
@@ -152,7 +162,8 @@ void	err_msg::RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::
 
 void	err_msg::RPL_ENDOFWHO(int cl_fd, std::string nick, std::string cname)
 {
-	send(cl_fd, ("366 " + nick + " " + cname + " :End of /NAMES list\n").c_str(), cname.size() + nick.size() + 27, 0);
+	std::string a = &(cname.c_str())[1];
+	send(cl_fd, ("315 " + nick + " " + a + " :End of WHO list\n").c_str(), cname.size() + nick.size() + 25, 0);
 }
 
 void	err_msg::RPL_REGISTER(int cl_fd, std::string nick)

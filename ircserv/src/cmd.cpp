@@ -532,11 +532,7 @@ void	serv::notice(std::string b, User &user)
 	msg = b.substr(sp, b.size());
 	msg = msg.substr(msg.find(":"), msg.size());
 	std::vector<std::string> part = split(nick);
-	if (part.empty())
-		return ;
-	else if (part.size() != 1)
-		return ;
-	else if (msg.empty())
+	if (part.empty() || part.size() != 1 || msg.empty())
 		return ;
 	else if (user.getChannels().find(part[0]) == user.getChannels().end())
 	{
@@ -563,48 +559,12 @@ void	serv::who(string b, User &user)
 	if (!arr.empty())
 	{
 		std::map<std::string, Channel>::iterator c = all_channels.find(arr[0]);
-		std::string members;
-		std::string oper;
 		if (c != all_channels.end())
 		{
 			std::map<int, User&>::iterator i = c->second.getMembers().begin();
 			for (; i != c->second.getMembers().end(); i++)
-			{
-				if (c->second.oper.find(i->second.getNickName()) != c->second.oper.end())
-				{
-					oper.append("@");
-					oper.append(i->second.getNickName());
-					oper.append(" ");
-				}
-				else
-				{
-					members.append("+");
-					members.append(i->second.getNickName());						
-					members.append(" ");
-				}
-			}
-			if (c->second.getMembers().size() == 0)
-			{
-				oper.append("@");
-				oper.append(user.getNickName());
-				oper.append(" ");
-			}
-			else if (c->second.getMembers().find(user.getUserFD()) == c->second.getMembers().end())
-			{
-				members.append("+");
-				members.append(user.getNickName());						
-				members.append(" ");
-			}
-			msg_err.RPL_WHOREPLY(user.getUserFD(), user.getNickName(), c->second.getChannelName(), oper, members);
+				msg_err.RPL_WHOREPLY(user.getUserFD(), user.getNickName(), c->second.getChannelName(), i->second.getNickName(), user.getUserName());
 			msg_err.RPL_ENDOFWHO(user.getUserFD(), user.getNickName(), c->second.getChannelName());
-		}
-		else if (fromJoinCheck)
-		{
-			members = "";
-			oper.append("@");
-			oper.append(user.getNickName());
-			msg_err.RPL_WHOREPLY(user.getUserFD(), user.getNickName(), arr[0], oper, members);
-			msg_err.RPL_ENDOFWHO(user.getUserFD(), user.getNickName(), arr[0]);
 		}
 		else
 		{

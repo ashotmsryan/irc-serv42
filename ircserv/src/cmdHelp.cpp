@@ -39,10 +39,7 @@ bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, b
 			if (arr[0][0] != '#')
 				arr[0] = '#' + arr[0];
 			chan.setChannelName(arr[0]);
-			fromJoinCheck = true;
-			sendAll(chan.getMembers(), (":" + user.getNickName() + "@localhost JOIN "),  (chan.getChannelName() + "\n"));
-			who(chan.getChannelName(), user);
-			fromJoinCheck = false;
+			sendReplyToJoin(chan, user);
 		}
 		else
 		{
@@ -62,10 +59,7 @@ bool	serv::joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, b
 			if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 			{
 				if (arr[0][0] == '#')
-				{
-					sendAll(chan.getMembers(), (":" + user.getNickName() + "@localhost JOIN "),  (chan.getChannelName() + "\n"));
-					who(chan.getChannelName(), user);
-				}
+					sendReplyToJoin(chan, user);
 				else
 				{
 					msg_err.ERR_NOSUCHCHANNEL(user.getUserFD(), arr[0]);
@@ -106,11 +100,7 @@ bool	serv::joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, b
 		if ((chan.l && chan.max > chan.getMembers().size()) || !chan.l)
 		{
 			if (chan.getChannelKey().empty())
-			{
-				sendAll(chan.getMembers(), (":" + user.getNickName() + "@localhost JOIN "),  (chan.getChannelName() + "\n"));
-				who(chan.getChannelName(), user);
-				fromJoinCheck = false;
-			}
+				sendReplyToJoin(chan, user);
 			else
 			{
 				msg_err.ERR_NEEDMOREPARAMS(user.getUserFD(), arr[0]);
@@ -186,4 +176,47 @@ int	serv::findUserByNick (string nick)
 			return (i->first);
 	}
 	return (0);
+}
+
+void	serv::sendReplyToJoin(Channel &chan, User &user)
+{
+	std::map<int, User&>::iterator i = chan.getMembers().begin();
+	std::string members;
+	std::string oper;
+	for (; i != chan.getMembers().end(); i++)
+	{
+		if (chan.oper.find(i->second.getNickName()) != chan.oper.end())
+		{
+			oper.append("@");
+			oper.append(i->second.getNickName());
+			oper.append(" ");
+		}
+		else
+		{
+			members.append("+");
+			members.append(i->second.getNickName());						
+			members.append(" ");
+		}
+	}
+	if (chan.getMembers().size() == 0)
+	{
+		oper.append("@");
+		oper.append(user.getNickName());
+		oper.append(" ");
+	}
+	else if (chan.getMembers().find(user.getUserFD()) == chan.getMembers().end())
+	{
+		members.append("+");
+		members.append(user.getNickName());						
+		members.append(" ");
+	}
+	send(user.getUserFD(), (":" + user.getNickName() + "!" + user.getUserName() + "@127.0.0.1 JOIN " + chan.getChannelName() + "\n").c_str(), (user.getNickName().size() + user.getUserName().size() + chan.getChannelName().size() + 20), 0);
+	sendAll(chan.getMembers(), (":" + user.getNickName() + "@127.0.0.1 JOIN "),  (chan.getChannelName() + "\n"));
+	// if (chan.getChannelTopic().empty())
+	// 	msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), false, "");
+	// else
+	// 	msg_err.RPL_TOPIC(user.getUserFD(), chan.getChannelName(), true, chan.getChannelTopic());
+	msg_err.RPL_NAMREPLY(user.getUserFD(), user.getNickName(), chan.getChannelName(), oper, members);
+	msg_err.RPL_ENDOFNAMES(user.getUserFD(), user.getNickName(), chan.getChannelName());
+
 }
