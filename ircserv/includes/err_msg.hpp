@@ -36,22 +36,17 @@ public:
 
 	void	RPL_PONG(int cl_fd, std::string nick);
 	void	RPL_QUIT(int cl_fd, std::string nick, std::string msg);
-	void	RPL_INVITING(int cl_fd, std::string cname, std::string nick);
+	void	RPL_INVITING(int cl_fd, std::string cname, std::string nick, std::string uname, std::string tname);
 	void	RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string topic);
 	
-	// void	RPL_JOIN(int cl_fd, std::string nick, std::string cname);
-	void	RPL_REGISTER(int cl_fd, std::string nick);
+	void	RPL_REGISTER(int cl_fd, std::string nick, std::string uname);
 	void	RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::string memb, std::string username);
-	void	RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members);
+	void	RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string members);
 	void	RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname);
 	void	RPL_ENDOFWHO(int cl_fd, std::string nick, std::string cname);
-	void	RPL_PRIVMSG(int cl_fd, std::string nick, std::string tname, std::string msg);
+	void	RPL_PRIVMSG(int cl_fd, std::string nick, std::string uname, std::string tname, std::string msg);
 	void	RPL_NOTICE(int cl_fd, std::string nick, std::string tname, std::string msg);
+	void	RPL_PART(int cl_fd, std::string nick, std::string uname, std::string cname);
 
-
-	// PRIVMSG
-	// JOIN
-	// KICK
-	// MODE
 };
 #endif 

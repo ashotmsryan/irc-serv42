@@ -13,6 +13,7 @@ serv::serv()
 	cmd["NOTICE"] = &serv::notice;
 	cmd["WHO"] = &serv::who;
 	
+	cmd["PART"] = &serv::part;
 	cmd["JOIN"] = &serv::join;
 	cmd["KICK"] = &serv::kick;
 	cmd["INVITE"] = &serv::invite;

@@ -27,6 +27,7 @@ class serv : public Data
 	bool	joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	bool	joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	void	sendReplyToJoin(Channel &chan, User &user);
+	void	sendModeReply(User &user, Channel &chan);
 	void	sendAll(std::map<int, User&> use, std::string cmd, std::string msg);
 	std::vector<std::string> parsing(std::string buf);
 
@@ -48,6 +49,7 @@ public:
 	
 	void	cap(string b, User &user);
 	void	who(string b, User &user);
+	void	part(string b, User &user);
 	void	join(string b, User &user);
 	void	kick(string b, User &user);
 	void	invite(string b, User &user);

@@ -130,22 +130,26 @@ void	err_msg::RPL_QUIT(int cl_fd, std::string nick, std::string msg)
 	send(cl_fd, (":QUIT@localhost " + nick + " " + msg + "\n").c_str(), 19 + nick.size() + msg.size(), 0);
 }
 
-void	err_msg::RPL_INVITING(int cl_fd, std::string cname, std::string nick)
+void	err_msg::RPL_INVITING(int cl_fd, std::string cname, std::string nick, std::string uname, std::string tname)
 {
-	send(cl_fd, (":INVITE@localhost 341 " + cname + " " + nick + "\n").c_str(), 25 + nick.size() + cname.size(), 0);
+	std::string m = ":" + nick + "!" + uname + "@localhost 341 " + cname + " " + tname + "\n";
+	send(cl_fd, m.c_str(), m.size(), 0);
 }
 
 void	err_msg::RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string topic)
 {
+	std::string m;
 	if (flag)
-		send(cl_fd, (":" + cname + "@localhost 331 No topic is set\n").c_str(), 33 + cname.size(), 0);
+		m = ":" + cname + "@localhost 331 No topic is set\n";
 	else
-		send(cl_fd, (":" + cname + "@localhost 332" + topic + "\n").c_str(), 17 + cname.size() + topic.size(), 0);
+		m = ":" + cname + "@localhost 332 " + topic + "\n";
+	send(cl_fd, m.c_str(), m.size(), 0);
 }
 
 void	err_msg::RPL_WHOREPLY(int cl_fd, std::string nick, std::string cname, std::string memb, std::string username)
 {
-	send(cl_fd, ("352 " + nick + " " + cname + " " + username + " 127.0.0.1 irc " + memb + "H :1 " + username + "\n").c_str(), 28 + nick.size() + cname.size() + memb.size() + 2 * username.size(), 0);
+	std::string m = "352 " + nick + " " + cname + " " + username + " 127.0.0.1 irc " + memb + " H :1 " + username + "\n";
+	send(cl_fd, m.c_str(), m.size(), 0);
 }
 
 void	err_msg::RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname)
@@ -153,30 +157,37 @@ void	err_msg::RPL_ENDOFNAMES(int cl_fd, std::string nick, std::string cname)
 	send(cl_fd, ("366 " + nick + " " + cname + " :End of /NAMES list\n").c_str(), cname.size() + nick.size() + 27, 0);
 }
 
-void	err_msg::RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string oper, std::string members)
+void	err_msg::RPL_NAMREPLY(int cl_fd, std::string nick, std::string cname, std::string members)
 {
-	send(cl_fd, ("353 " + nick + " = " + cname + " :" + oper + "\n").c_str(), 10 + nick.size() + cname.size() + oper.size(), 0);
-	if (!members.empty())
-		send(cl_fd, ("353 " + nick + " = " + cname + " :" + members + "\n").c_str(), 10 + nick.size() + cname.size() + members.size(), 0);
+	send(cl_fd, ("353 " + nick + " = " + cname + " :" + members + "\n").c_str(), 10 + nick.size() + cname.size() + members.size(), 0);
 }
 
 void	err_msg::RPL_ENDOFWHO(int cl_fd, std::string nick, std::string cname)
 {
 	std::string a = &(cname.c_str())[1];
-	send(cl_fd, ("315 " + nick + " " + a + " :End of WHO list\n").c_str(), cname.size() + nick.size() + 25, 0);
+	std::string m = "315 " + nick + " " + a + " :End of WHO list\n";
+	send(cl_fd, m.c_str(), m.size(), 0);
 }
 
-void	err_msg::RPL_REGISTER(int cl_fd, std::string nick)
+void	err_msg::RPL_REGISTER(int cl_fd, std::string nick, std::string uname)
 {
-	send(cl_fd, (":" + nick + "@localhost 001 Welcome to the IRC Network, " + nick +"!\n").c_str(), 47 + (2*nick.size()), 0);
+	std::string msg = ":" + nick + "!" + uname + "@localhost 001 " + nick + " :Welcome to the IRC Network\n";
+	send(cl_fd, msg.c_str(), msg.length(), 0);
 }
 
-void	err_msg::RPL_PRIVMSG(int cl_fd, std::string nick, std::string tname, std::string msg)
+void	err_msg::RPL_PRIVMSG(int cl_fd, std::string nick, std::string uname, std::string tname, std::string msg)
 {
-	send(cl_fd, (":" + nick + "@localhost PRIVMSG " + tname + " " + msg).c_str(), 22 + nick.size() + tname.size() + msg.size(), 0);
+	std::string a = msg.substr(msg.find(":") + 1, msg.size() - msg.find(":"));
+	std::string m = (":" + nick + "!" + uname + "@localhost PRIVMSG " + tname + " "+ ":" + " " + a + "\n");
+	send(cl_fd, m.c_str(), m.size(), 0);
 }
 
 void	err_msg::RPL_NOTICE(int cl_fd, std::string nick, std::string tname, std::string msg)
 {
 	send(cl_fd, (":" + nick + "@localhost NOTICE " + tname + " " + msg).c_str(), 21 + nick.size() + tname.size() + msg.size(), 0);
+}
+
+void	err_msg::RPL_PART(int cl_fd, std::string nick, std::string uname, std::string cname)
+{
+	send(cl_fd, (":" + uname + "!" + nick + "@localhost 324 PART " + cname + " :Left the channel\n").c_str(), 41 + uname.size() + nick.size() + cname.size(), 0);
 }
