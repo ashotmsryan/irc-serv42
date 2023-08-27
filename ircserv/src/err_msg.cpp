@@ -191,3 +191,9 @@ void	err_msg::RPL_PART(int cl_fd, std::string nick, std::string uname, std::stri
 {
 	send(cl_fd, (":" + uname + "!" + nick + "@localhost 324 PART " + cname + " :Left the channel\n").c_str(), 41 + uname.size() + nick.size() + cname.size(), 0);
 }
+
+void	err_msg::RPL_KICK(int cl_fd, std::string nick, std::string uname, std::string tname, std::string cname)
+{
+	std::string msg = (":" + nick + "!" + uname + "@localhost KICK " + cname + " " + tname + " :The \n");
+	send(cl_fd, msg.c_str(), msg.size(), 0);
+}

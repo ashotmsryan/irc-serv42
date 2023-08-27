@@ -35,6 +35,7 @@ public:
 // ############################ REPLY #################################
 
 	void	RPL_PONG(int cl_fd, std::string nick);
+	void	RPL_KICK(int cl_fd, std::string nick, std::string uname, std::string tname, std::string cname);
 	void	RPL_QUIT(int cl_fd, std::string nick, std::string msg);
 	void	RPL_INVITING(int cl_fd, std::string cname, std::string nick, std::string uname, std::string tname);
 	void	RPL_TOPIC(int cl_fd, std::string cname, bool flag, std::string topic);

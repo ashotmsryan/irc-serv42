@@ -185,7 +185,6 @@ void	serv::sendReplyToJoin(Channel &chan, User &user)
 	// cout << (":" + user.getNickName() + "!" + user.getUserName() + "@127.0.0.1 JOIN " + chan.getChannelName() + "\n").size() << endl;
 	string msg = ":" + user.getNickName() + "!" + user.getUserName() + "@localhost JOIN " + chan.getChannelName();
 	send(user.getUserFD(), (msg + "\n").c_str(),msg.length() + 2, 0);
-	cout << "====================>>>" << msg <<endl;
 	sendAll(chan.getMembers(), (":" + user.getNickName() + "!" + user.getUserName() + "@localhost JOIN "),  (chan.getChannelName() + "\n"));
 	for (; i != chan.getMembers().end(); i++)
 	{

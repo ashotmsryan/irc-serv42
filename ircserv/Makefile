@@ -19,6 +19,7 @@ $(OBJFILE) :
 
 $(OBJFILE)/%.o : src/%.cpp Makefile includes/*.hpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@stty eof ^V
 
 $(NAME): $(OBJS) Makefile
 	$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJS)
@@ -28,6 +29,7 @@ clean:
 
 fclean: clean
 	$(RM) $(NAME)
+	@stty eof '^D'
 
 bonus: $(NAME)
 

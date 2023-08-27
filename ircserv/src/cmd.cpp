@@ -287,7 +287,10 @@ void	serv::kick(std::string b, User &user)
 				msg_err.ERR_NOSUCHNICK(user.getUserFD(), arr[1]);
 				return ;
 			}
-			sendAll(i->second.getMembers(), ":KICK@localhost ", "KICK " + i->second.getChannelName() + " " + it->second.getNickName());
+			msg_err.RPL_KICK(it->first, user.getNickName(), user.getUserName(), it->second.getNickName(), i->first);
+			std::string prefix = ":" + user.getNickName() + "!" + user.getUserName() + "@localhost KICK ";
+			std::string msg = i->first + " " + it->second.getNickName() + "\n";
+			sendAll(i->second.getMembers(), prefix, msg);
 			i->second.getMembers().erase(it);
 			if (i->second.getMembers().empty())
 				all_channels.erase(i->second.getChannelName());

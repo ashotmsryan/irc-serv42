@@ -21,18 +21,6 @@ serv::serv()
 	cmd["MODE"] = &serv::mode;
 }
 
-int	serv::maxFD()
-{
-	int max = 3;
-
-	for(map<int, User>::iterator i = users.begin(); i != users.end(); i++)
-	{
-		if (i->second.getUserFD() > max)
-			max = i->second.getUserFD();
-	}
-	return(max);
-}
-
 void	serv::add_client()
 {
 	User	new_user(0);
@@ -52,41 +40,14 @@ void	serv::add_client()
 	std::cout << "New client added" << std::endl;	
 }
 
-std::vector<std::string> serv::parsing(std::string buf)
-{
-	size_t i = 0;
-	size_t j = 0;
-	std::vector<std::string> ret;
-	while(buf[i] || (!buf[i] && buf.size() != i))
-	{
-		if (buf[i] == '\n' || buf[i] == '\r')
-		{
-			ret.push_back(buf.substr(j, i));
-			j = i;
-			while(buf[i] && (buf[i] == '\n' || buf[i] == '\r'))
-				i++;
-			j = i;
-		}
-		if (buf[i])
-			i++;
-	}
-	if (buf[buf.size() - 1] != '\n' && buf[buf.size() - 1] != '\r')
-	{
-		ret.push_back(buf.substr(j, buf.size() - j));
-		ret.back().append("\n");
-	}
-	i = 0;
-	return (ret);
-}
-
-
 bool	serv::read_write(int fd)
 {
 	string e;
 	string str;
 	char buf[1025] = {0};
+	int len = 0;
 
-	if (recv(fd, buf, 1025, 0) <= 0)
+	if ((len = recv(fd, buf, 1025, MSG_DONTWAIT)) == 0)
     {
 		if(fd != serv_fd)
 		{
@@ -100,7 +61,10 @@ bool	serv::read_write(int fd)
 		}
 		return true;
     }
-	std::vector<std::string> lines = parsing(buf);
+	else if (len == -1)
+		return false;
+	buf[len] = '\0';
+	std::vector<std::string> lines = parsing(buf, len);
 	size_t i = 0;
 	while(!lines.empty() && i != lines.size())
 	{
@@ -168,24 +132,20 @@ bool	serv::startServ()
 	addrlen = sizeof(addr);
 	int select_flag;
 	fd_set	readFD;
-	fd_set	writeFD;
 
 	//clear the socket set
 	FD_ZERO(&def);
-	//add server socket to set 
-	writeFD = readFD = def;
-	timeval t;
-	t.tv_usec = 300000;
-	t.tv_sec = 0;
+	readFD = def;
 	cout << "ServerFD = "<< serv_fd << endl;
 	fcntl(serv_fd, F_SETFL, O_NONBLOCK);
+	//add server socket to set 
 	FD_SET(serv_fd, &def);
 	while (true)
 	{
-		writeFD = readFD = def;
+		readFD = def;
  		//wait for an activity on one of the sockets , timeout is NULL
         //so wait indefinitely 
-		select_flag = select(maxFD() + 1, &readFD, &writeFD, NULL, NULL);
+		select_flag = select(maxFD() + 1, &readFD, NULL, NULL, NULL);
 		if (select_flag <= 0)
 		{
 			std::cout << "select :Something went wrong" << std::endl;

@@ -27,8 +27,10 @@ class serv : public Data
 	bool	joinWithTwoArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	bool	joinWithOneArgs(User &user, Channel &chan, std::vector<string> arr, bool flag);
 	void	sendReplyToJoin(Channel &chan, User &user);
+	void	deleteWhiteSpace(std::string &s);
 	void	sendModeReply(User &user, Channel &chan);
 	void	sendAll(std::map<int, User&> use, std::string cmd, std::string msg);
+	std::vector<std::string> parsing(char *buf, size_t len);
 	std::vector<std::string> parsing(std::string buf);
 
 	map<std::string, Channel&>::iterator findChannelsFromUsers(std::string name);
