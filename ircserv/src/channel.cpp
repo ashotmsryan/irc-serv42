@@ -37,7 +37,7 @@ std::string Channel::getChannelName(){return (name);}
 void	Channel::setChannelName(std::string n){name = n;}
 
 std::map<int, User*> &Channel::getMembers(){return (members);}
-void	Channel::setMembers(int fd, User &user){members.insert(pair(fd, &user));}
+void	Channel::setMembers(int fd, User &user){members.insert(make_pair(fd, &user));}
 
 void	Channel::setChannelKey(std::string k){key = k;}
 std::string	Channel::getChannelKey(){return (key);}
