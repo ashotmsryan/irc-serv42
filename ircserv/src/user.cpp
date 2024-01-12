@@ -13,8 +13,9 @@ User::User(User const &other)
 	this->nickName = other.nickName;
 	this->functionality = other.functionality;
 
-	for (std::map<std::string, Channel&>::const_iterator i = other.channels.begin(); i != other.channels.end(); i++)
-		this->channels.insert(make_pair<std::string, Channel&>(i->first, i->second));
+	for (std::map<std::string, Channel*>::const_iterator i = other.channels.begin(); i != other.channels.end(); i++)
+		this->channels.insert(make_pair(i->first, i->second));
+		// this->channels.insert(make_pair<std::string, Channel&>(i->first, i->second));
 }
 
 void	User::setHostName(std::string &n){hostName = n;}
@@ -24,7 +25,8 @@ void	User::setServName(std::string &n){servName = n;}
 void	User::setNickName(std::string &n){nickName = n;}
 void	User::changePassFlag(){!pass ? pass = true : pass = false;}
 void	User::setUserFD(int f){fd = f;}
-void	User::setChannels(std::string n, Channel &chan){channels.insert(make_pair<std::string, Channel&> (n, chan));}
+void	User::setChannels(std::string n, Channel &chan){channels.insert(make_pair(n, &chan));}
+// void	User::setChannels(std::string n, Channel &chan){channels.insert(make_pair<std::string, Channel&> (n, chan));}
 
 std::string &User::getHostName(){return(hostName);}
 std::string &User::getUserName(){return(uName);}
@@ -33,4 +35,4 @@ std::string User::getNickName(){return(nickName);}
 std::string &User::getServName(){return(servName);}
 bool		 User::getPassFlag(){return(pass);}
 int 		&User::getUserFD(){return(fd);}
-map<std::string, Channel&> &User::getChannels(){return (channels);}
+map<std::string, Channel*> &User::getChannels(){return (channels);}

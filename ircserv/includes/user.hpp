@@ -15,7 +15,8 @@ class User
 	std::string servName;
 	std::string nickName;
 
-	map<std::string, Channel&> channels;
+	map<std::string, Channel*> channels;
+	// map<std::string, Channel&> channels;
 public:
 	bool		functionality;
 	User(int f);
@@ -37,7 +38,7 @@ public:
 	std::string getNickName();
 	bool 		getPassFlag();
 	int 		&getUserFD();
-	map<std::string, Channel&> &getChannels();
+	map<std::string, Channel*> &getChannels();
 };
 
 #endif

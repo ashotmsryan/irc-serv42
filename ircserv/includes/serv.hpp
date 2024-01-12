@@ -15,6 +15,7 @@ class serv : public Data
 	map<int, User> users;
 	map<string, void(serv::*)(string, User&)> cmd;
 	std::vector<int> fd;
+    
 	bool	checkSockFD();
 	bool	checkNumber(std::string n);
 	int		maxFD();
@@ -29,11 +30,11 @@ class serv : public Data
 	void	sendReplyToJoin(Channel &chan, User &user);
 	void	deleteWhiteSpace(std::string &s);
 	void	sendModeReply(User &user, Channel &chan);
-	void	sendAll(std::map<int, User&> use, std::string cmd, std::string msg);
+	void	sendAll(std::map<int, User*> use, std::string cmd, std::string msg);
 	std::vector<std::string> parsing(char *buf, size_t len);
 	std::vector<std::string> parsing(std::string buf);
 
-	map<std::string, Channel&>::iterator findChannelsFromUsers(std::string name);
+	map<std::string, Channel*>::iterator findChannelsFromUsers(std::string name);
 public:
 	serv();
 

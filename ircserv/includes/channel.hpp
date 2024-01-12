@@ -6,7 +6,7 @@ class User;
 
 class Channel
 {
-	std::map<int, User&> members;
+	std::map<int, User*> members;
 	std::string name;
 	std::string key;
 	std::string topic;
@@ -24,7 +24,7 @@ public:
 	std::string getChannelName();
 	void setChannelName(std::string k);
 
-	std::map<int, User&> &getMembers();
+	std::map<int, User*> &getMembers();
 	void	setMembers(int fd, User &user);
 
 	void	setChannelKey(std::string k);
@@ -33,7 +33,7 @@ public:
 	void	setChannelTopic(std::string t);
 	std::string getChannelTopic();
 	
-	map<int, User&>::iterator findUserFromChannel(std::string name);
+	map<int, User*>::iterator findUserFromChannel(std::string name);
 
 };
 

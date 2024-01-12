@@ -1,10 +1,10 @@
 #include "../includes/serv.hpp"
 
-void	serv::sendAll(std::map<int, User&> use, std::string cmd, std::string msg)
+void	serv::sendAll(std::map<int, User*> use, std::string cmd, std::string msg)
 {
-	for (std::map<int, User&>::iterator i = use.begin(); i != use.end(); i++)
+	for (std::map<int, User*>::iterator i = use.begin(); i != use.end(); i++)
 	{
-		send(i->second.getUserFD(), (cmd + msg).c_str(), cmd.size() + msg.size(), 0);
+		send(i->second->getUserFD(), (cmd + msg).c_str(), cmd.size() + msg.size(), 0);
 	}
 }
 
@@ -15,10 +15,10 @@ bool	serv::checkChannelNameKey(std::vector<std::string> arr)
 	return true;
 }
 
-map<std::string, Channel&>::iterator serv::findChannelsFromUsers(std::string name)
+map<std::string, Channel*>::iterator serv::findChannelsFromUsers(std::string name)
 {
 	map<int, User>::iterator i = users.begin();
-	map<std::string, Channel&>::iterator it;
+	map<std::string, Channel*>::iterator it;
 	for (; i != users.end(); i++)
 	{
 		it = i->second.getChannels().find(name);
@@ -128,7 +128,8 @@ void	serv::joinChannel(User &user, Channel &chan, std::vector<string> arr, bool 
 	}
 	else
 		return ;
-	all_channels.insert(std::make_pair<std::string, Channel>(chan.getChannelName(), chan));
+	all_channels.insert(make_pair(chan.getChannelName(), chan));
+	// all_channels.insert(make_pair<std::string, Channel>(chan.getChannelName(), chan));
 	all_channels.find(chan.getChannelName())->second.setMembers(user.getUserFD(), user);
 	user.setChannels(all_channels.find(chan.getChannelName())->first, all_channels.find(chan.getChannelName())->second);
 }
@@ -148,7 +149,7 @@ bool serv::checkNumber(std::string n)
 void	serv::removeFromChannels(int fd)
 {
 	map<std::string, Channel>::iterator i = all_channels.begin();
-	map<int, User&>::iterator u;
+	map<int, User*>::iterator u;
 	for(; i != all_channels.end(); i++)
 	{
 		u = i->second.getMembers().find(fd);
@@ -178,7 +179,7 @@ int	serv::findUserByNick (string nick)
 
 void	serv::sendReplyToJoin(Channel &chan, User &user)
 {
-	std::map<int, User&>::iterator i = chan.getMembers().begin();
+	std::map<int, User*>::iterator i = chan.getMembers().begin();
 	std::string members;
 
 	// cout << "nick = " <<  user.getNickName() << " user = " << user.getUserName() << " chan = " << chan.getChannelName() << endl;
@@ -188,15 +189,15 @@ void	serv::sendReplyToJoin(Channel &chan, User &user)
 	sendAll(chan.getMembers(), (":" + user.getNickName() + "!" + user.getUserName() + "@localhost JOIN "),  (chan.getChannelName() + "\n"));
 	for (; i != chan.getMembers().end(); i++)
 	{
-		if (chan.oper.find(i->second.getNickName()) != chan.oper.end())
+		if (chan.oper.find(i->second->getNickName()) != chan.oper.end())
 		{
 			members.append("@");
-			members.append(i->second.getNickName());
+			members.append(i->second->getNickName());
 		}
 		else
 		{
 			members.append("+");
-			members.append(i->second.getNickName());						
+			members.append(i->second->getNickName());						
 		}
 		msg_err.RPL_NAMREPLY(user.getUserFD(), user.getNickName(), chan.getChannelName(), members);
 		members = "";

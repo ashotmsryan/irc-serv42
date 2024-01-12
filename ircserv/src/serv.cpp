@@ -84,7 +84,7 @@ bool	serv::read_write(int fd)
 				if (users.find(fd)->second.functionality || (!users.find(fd)->second.functionality 
 					&& ((it->first == "CAP") || (it->first == "USER")
 					|| (it->first == "NICK") || (it->first == "PASS") || (it->first == "PING"))))
-				{	
+				{
 					(this->*(it->second))(str, users.find(fd)->second);
 				}
 				else
